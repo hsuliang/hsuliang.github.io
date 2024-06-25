@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>可愛簡易倒數計時器</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6a5acd;
+            --secondary-color: #e6e6fa;
+            --accent-color: #9370db;
+            --text-color: #333;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, var(--secondary-color), white);
+            font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+            color: var(--text-color);
+        }
+        
+        #setup, #countdown, #timeUpPage {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            margin: 20px auto;
+        }
+        
+        #setup h2 {
+            font-size: 2.2em;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        
+        #setup label, #setup input, #setup button {
+            font-size: 1.1em;
+            margin: 10px 0;
+        }
+        
+        #setup input[type="number"] {
+            width: 70px;
+            text-align: center;
+            padding: 5px;
+            border: 2px solid var(--accent-color);
+            border-radius: 5px;
+        }
+        
+       #setup .input-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        #setup .input-group label {
+            margin-right: 10px;
+        }
+        
+        #setup input[type="file"] {
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            overflow: hidden;
+            position: absolute;
+            z-index: -1;
+        }
+        
+        #setup .file-upload-label {
+            cursor: pointer;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        #setup .file-upload-label:hover {
+            background-color: var(--primary-color);
+        }
+        
+        #iconPreview {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin: 10px auto;
+            display: block;
+            border: 2px solid var(--accent-color);
+        }
+        
+        #confirmButton {
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 24px;
+            margin-top: 20px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        #confirmButton:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        #timer {
+            font-size: 5em;
+            margin-top: 20px;
+            color: var(--primary-color);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .circle {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            border: 10px solid var(--accent-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px auto;
+            background: linear-gradient(135deg, var(--secondary-color), white);
+            box-shadow: 0 0 30px rgba(106, 90, 205, 0.3);
+        }
+        
+        .circle.flash {
+            animation: flash-animation 1s infinite alternate;
+        }
+        
+        @keyframes flash-animation {
+            0% { border-color: red; }
+            100% { border-color: yellow; }
+        }
+        
+        .circle img {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+        }
+        
+        #controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 24px;
+            margin: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        #footer {
+            font-size: 0.9em;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        #footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        #footer a:hover {
+            text-decoration: underline;
+        }
+        
+        #timeUpPage h2 {
+            color: red;
+            font-size: 6em;
+        }
+        
+        @media (max-width: 600px) {
+            #setup, #countdown, #timeUpPage {
+                width: 95%;
+            }
+            
+            #timer {
+                font-size: 3em;
+            }
+            
+            .circle {
+                width: 250px;
+                height: 250px;
+            }
+            
+            #timeUpPage h2 {
+                font-size: 4em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="setup">
+        <h2>可愛簡易倒數計時器</h2>
+        <div class="input-group">
+            <label for="timeInput">倒數時間：</label>
+            <input type="number" id="timeInput" value="1" min="0.1" step="0.1"> 分鐘
+        </div>
+        <div class="input-group">
+            <label for="soundCheckbox">啟用倒數聲音</label>
+            <input type="checkbox" id="soundCheckbox" checked>
+        </div>
+        <div class="input-group">
+            <label for="scaleCheckbox">畫面放大</label>
+            <input type="checkbox" id="scaleCheckbox">
+        </div>
+        <div class="input-group">
+            <label for="iconUpload" class="file-upload-label">選擇計時圈圖案</label>
+            <input type="file" id="iconUpload" accept="image/*">
+        </div>
+        <img id="iconPreview" src="https://www.teachersay.com/image/works/uKi92QaNkqs3ivfqdgo2de8gb93bIJh4Xrr0t8wp.png" alt="Icon Preview">
+        <button id="confirmButton">設定完成</button>
+    </div>
+    <div id="countdown" style="display:none;">
+        <div class="circle">
+            <img id="icon" src="https://www.teachersay.com/image/works/uKi92QaNkqs3ivfqdgo2de8gb93bIJh4Xrr0t8wp.png" alt="Icon">
+            <div id="timer"></div>
+        </div>
+        <div id="controls">
+            <button id="startButton">▶️ 開始</button>
+            <button id="pauseButton">⏸️ 暫停</button>
+            <button id="resetButton">🔄 重置</button>
+            <button id="extendButton">➕ 延長1分鐘</button>
+        </div>
+    </div>
+    <div id="timeUpPage" style="display:none;">
+        <h2>時間到 ‼️</h2>
+        <button id="confirmTimeUp">確定</button>
+    </div>
+    <div id="footer" style="display:none;">
+        Made by <a href="https://lin.ee/jz7fxYMQ" target="_blank">ㄚ亮笑長練功坊</a>
+    </div>
+
+    <audio id="countdownSound" src="https://www.teachersay.com/image/works/Lljbox1YshiM0xQw736XaQ9KsMKkEp5fv4zXNxXL.mp3" preload="auto"></audio>
+    <audio id="endSound" src="https://www.teachersay.com/image/works/ZPo3LtD6TQMPw1N1iKqejaOMxajBlQNbtXQyJrQA.mp3" preload="auto"></audio>
+
+    <script>
+        const confirmButton = document.getElementById('confirmButton');
+        const startButton = document.getElementById('startButton');
+        const timeInput = document.getElementById('timeInput');
+        const soundCheckbox = document.getElementById('soundCheckbox');
+        const scaleCheckbox = document.getElementById('scaleCheckbox');
+        const setupDiv = document.getElementById('setup');
+        const countdownDiv = document.getElementById('countdown');
+        const timerDiv = document.getElementById('timer');
+        const iconImg = document.getElementById('icon');
+        const countdownSound = document.getElementById('countdownSound');
+        const endSound = document.getElementById('endSound');
+        const pauseButton = document.getElementById('pauseButton');
+        const resetButton = document.getElementById('resetButton');
+        const extendButton = document.getElementById('extendButton');
+        const circleDiv = document.querySelector('.circle');
+        const footerDiv = document.getElementById('footer');
+        const timeUpPage = document.getElementById('timeUpPage');
+        const confirmTimeUpButton = document.getElementById('confirmTimeUp');
+        const iconUpload = document.getElementById('iconUpload');
+        const iconPreview = document.getElementById('iconPreview');
+
+        let interval;
+        let paused = false;
+        let timeRemaining;
+        let totalTime;
+
+        iconUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    iconPreview.src = e.target.result;
+                    iconImg.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        confirmButton.addEventListener('click', () => {
+            totalTime = parseFloat(timeInput.value) * 60;
+            timeRemaining = totalTime;
+            const isScale = scaleCheckbox.checked;
+            countdownDiv.style.transform = isScale ? 'scale(2)' : 'scale(1)';
+            countdownDiv.style.position = isScale ? 'absolute' : 'static';
+            countdownDiv.style.top = isScale ? '50%' : 'auto';
+            countdownDiv.style.left = isScale ? '50%' : 'auto';
+            countdownDiv.style.transform = isScale ? 'translate(-50%, -50%) scale(2)' : 'scale(1)';
+            footerDiv.style.display = isScale ? 'none' : 'block';
+            setupDiv.style.display = 'none';
+            countdownDiv.style.display = 'block';
+            updateTimerDisplay();
+            
+            if (iconUpload.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    iconImg.src = e.target.result;
+                }
+                reader.readAsDataURL(iconUpload.files[0]);
+            }
+            
+            iconImg.style.transform = `translate(0px, -150px)`;
+        });
+
+        startButton.addEventListener('click', () => {
+            startCountdown();
+        });
+
+        pauseButton.addEventListener('click', () => {
+            if (!paused) {
+                clearInterval(interval);
+                countdownSound.pause();
+                pauseButton.textContent = '▶️ 繼續';
+            } else {
+                startCountdown();
+                pauseButton.textContent = '⏸️ 暫停';
+            }
+            paused = !paused;
+        });
+
+        resetButton.addEventListener('click', () => {
+            countdownSound.pause();
+            countdownSound.currentTime = 0;
+            countdownDiv.style.display = 'none';
+            setupDiv.style.display = 'block';
+            resetTimer();
+        });
+
+        extendButton.addEventListener('click', () => {
+            timeRemaining += 60;
+            totalTime += 60;
+            updateTimerDisplay();
+        });
+
+        confirmTimeUpButton.addEventListener('click', () => {
+            endSound.pause();
+            endSound.currentTime = 0;
+            timeUpPage.style.display = 'none';
+            setupDiv.style.display = 'block';
+            resetTimer();
+        });
+
+        function startCountdown() {
+            countdownSound.loop = soundCheckbox.checked;
+
+            if (soundCheckbox.checked) countdownSound.play();
+
+            updateTimer();
+
+            interval = setInterval(() => {
+                if (!paused) {
+                    timeRemaining -= 0.1;
+                    updateTimer();
+                    if (timeRemaining <= 30) {
+                        circleDiv.classList.add('flash');
+                    }
+                    if (timeRemaining <= 10) {
+                        countdownSound.playbackRate = 2.0;
+                    }
+                    if (timeRemaining <= 0) {
+                        clearInterval(interval);
+                        countdownSound.pause();
+                        endSound.play();
+                        countdownDiv.style.display = 'none';
+                        timeUpPage.style.display = 'block';
+                    }
+                }
+            }, 100);
+        }
+
+        function updateTimer() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = Math.floor(timeRemaining % 60);
+            const decimals = Math.floor((timeRemaining % 1) * 10);
+            timerDiv.textContent = `${minutes}:${('0' + seconds).slice(-2)}.${decimals}`;
+
+            const proportion = (totalTime - timeRemaining) / totalTime;
+            const angle = proportion * 360;
+            const radius = 150;
+            const x = radius * Math.sin(angle * Math.PI / 180);
+            const y = -radius * Math.cos(angle * Math.PI / 180);
+            iconImg.style.transform = `translate(${x}px, ${y}px)`;
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = Math.floor(timeRemaining % 60);
+            const decimals = Math.floor((timeRemaining % 1) * 10);
+            timerDiv.textContent = `${minutes}:${('0' + seconds).slice(-2)}.${decimals}`;
+        }
+
+        function resetTimer() {
+            clearInterval(interval);
+            timeInput.value = 1;
+            soundCheckbox.checked = true;
+            scaleCheckbox.checked = false;
+            pauseButton.textContent = '⏸️ 暫停';
+            circleDiv.classList.remove('flash');
+            paused = false;
+            countdownDiv.style.position = 'static';
+            countdownDiv.style.transform = 'scale(1)';
+            footerDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
