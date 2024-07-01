@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超慢跑計時器</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%);
+        }
+
+        #app {
+            max-width: 400px;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .page {
+            background-color: #fff5ee;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #ff7e5f;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-group label {
+            flex: 3;
+            margin-right: 10px;
+            color: #4a4a4a;
+            font-weight: bold;
+        }
+
+        .input-group input, .input-group select {
+            flex: 2;
+            padding: 8px;
+            border: 2px solid #feb47b;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            background-color: #fff;
+            color: #4a4a4a;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #ff7e5f;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background-color: #ff7e5f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: #feb47b;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        #timer-container {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin: 0 auto 30px;
+        }
+
+        #timer-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 4px solid #ff7e5f;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 15px rgba(255, 126, 95, 0.3);
+        }
+
+        #timer {
+            font-size: 48px;
+            color: #4a4a4a;
+            font-weight: bold;
+        }
+
+        #runner-container {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            transform-origin: 0 145px;
+        }
+
+        #runner-image {
+            width: 100%;
+            height: 100%;
+        }
+
+        #run-info {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        #run-info p {
+            margin: 10px 0;
+            font-size: 16px;
+            color: #4a4a4a;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #run-info span {
+            font-weight: bold;
+            color: #ff7e5f;
+        }
+
+        #control-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        #control-buttons button {
+            width: 48%;
+        }
+
+        #cheer-message {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #ff7e5f;
+            padding: 15px;
+            background-color: #fff5ee;
+            border-radius: 10px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.05);
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        #cheer-message span {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 15s linear infinite;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #completion-message {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 126, 95, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+        }
+
+        #completion-message.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #completion-message button {
+            margin-top: 20px;
+            background-color: white;
+            color: #ff7e5f;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 首頁 -->
+        <div id="home-page" class="page">
+            <h1>超慢跑計時器</h1>
+            <div class="input-group">
+                <label for="run-time">慢跑時間(分鐘)：</label>
+                <input type="number" id="run-time" min="1" max="60" value="5">
+            </div>
+            <div class="input-group">
+                <label for="run-bpm">慢跑步頻(BPM)：</label>
+                <input type="number" id="run-bpm" min="100" max="200" value="180">
+            </div>
+            <div class="input-group">
+                <label for="metronome-sound">節拍器聲選擇：</label>
+                <select id="metronome-sound">
+                    <option value="sound1">聲音1</option>
+                    <option value="sound2">聲音2</option>
+                    <option value="sound3">聲音3</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="runner-character">跑步人物選擇：</label>
+                <select id="runner-character">
+                    <option value="male">男生</option>
+                    <option value="female">女生</option>
+                </select>
+            </div>
+            <button id="start-button">開始</button>
+            <button id="record-button">紀錄</button>
+        </div>
+
+        <!-- 跑步頁 -->
+        <div id="run-page" class="page hidden">
+            <div id="timer-container">
+                <div id="timer-circle">
+                    <div id="timer">00:00</div>
+                </div>
+                <div id="runner-container">
+                    <img id="runner-image" src="" alt="跑步人物">
+                </div>
+            </div>
+            <div id="run-info">
+                <p>慢跑時間：<span id="run-time-display"></span></p>
+                <p>慢跑步頻(BPM)：<span id="run-bpm-display"></span></p>
+                <p>選擇節拍器聲：<span id="metronome-sound-display"></span></p>
+            </div>
+            <div id="control-buttons">
+                <button id="pause-button">暫停</button>
+                <button id="restart-button">重啟</button>
+            </div>
+            <div id="cheer-message"><span>加油！你一定可以的</span></div>
+            <div id="completion-message" class="hidden">
+                <h2>恭喜完成跑步！</h2>
+                <p>你太棒了！</p>
+                <button id="back-to-home">返回首頁</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM 元素
+        const homePage = document.getElementById('home-page');
+        const runPage = document.getElementById('run-page');
+        const startButton = document.getElementById('start-button');
+        const recordButton = document.getElementById('record-button');
+        const pauseButton = document.getElementById('pause-button');
+        const restartButton = document.getElementById('restart-button');
+        const timerDisplay = document.getElementById('timer');
+        const runnerImage = document.getElementById('runner-image');
+        const runnerContainer = document.getElementById('runner-container');
+        const completionMessage = document.getElementById('completion-message');
+        const backToHomeButton = document.getElementById('back-to-home');
+        const cheerMessage = document.getElementById('cheer-message');
+
+        // 輸入欄位
+        const runTimeInput = document.getElementById('run-time');
+        const runBpmInput = document.getElementById('run-bpm');
+        const metronomeSound = document.getElementById('metronome-sound');
+        const runnerCharacter = document.getElementById('runner-character');
+
+        // 顯示欄位
+        const runTimeDisplay = document.getElementById('run-time-display');
+        const runBpmDisplay = document.getElementById('run-bpm-display');
+        const metronomeSoundDisplay = document.getElementById('metronome-sound-display');
+
+        // 計時器變數
+        let timer;
+        let remainingTime;
+        let totalTime;
+        let isRunning = false;
+
+        // 節拍器
+        let metronome;
+
+        // 開始按鈕事件監聽器
+        startButton.addEventListener('click', startRun);
+
+        // 暫停按鈕事件監聽器
+        pauseButton.addEventListener('click', pauseRun);
+
+        // 重啟按鈕事件監聽器
+        restartButton.addEventListener('click', restartRun);
+
+        // 返回首頁按鈕事件監聽器
+        backToHomeButton.addEventListener('click', backToHome);
+
+        // 開始跑步
+        function startRun() {
+            // 設置跑步資訊
+            const runTime = parseInt(runTimeInput.value);
+            const runBpm = parseInt(runBpmInput.value);
+            const soundChoice = metronomeSound.value;
+            const characterChoice = runnerCharacter.value;
+
+            // 更新顯示
+            runTimeDisplay.textContent = runTime + '分鐘';
+            runBpmDisplay.textContent = runBpm + 'BPM';
+            metronomeSoundDisplay.textContent = soundChoice;
+            runnerImage.src = `${characterChoice}.png`;
+
+            // 設置計時器
+            totalTime = runTime * 60;
+            remainingTime = totalTime;
+            updateTimerDisplay();
+
+            // 切換到跑步頁面
+            homePage.classList.add('hidden');
+            runPage.classList.remove('hidden');
+
+            // 開始計時和節拍器
+            startTimer();
+            startMetronome(runBpm, soundChoice);
+
+            // 重置加油訊息
+            cheerMessage.innerHTML = '<span>加油！你一定可以的</span>';
+        }
+
+        // 更新計時器顯示
+        function updateTimerDisplay() {
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            updateRunnerPosition();
+
+            // 當剩下一分鐘時更新加油訊息
+            if (remainingTime === 60) {
+                cheerMessage.innerHTML = '<span>你快成功了，不要放棄！</span>';
+            }
+        }
+
+        // 更新跑步者位置
+        function updateRunnerPosition() {
+            const angle = 360 * (1 - remainingTime / totalTime);
+            runnerContainer.style.transform = `rotate(${angle}deg)`;
+        }
+
+        // 開始計時器
+        function startTimer() {
+            isRunning = true;
+            timer = setInterval(() => {
+                remainingTime--;
+                updateTimerDisplay();
+                if (remainingTime <= 0) {
+                    clearInterval(timer);
+                    stopMetronome();
+                    showCompletionMessage();
+                }
+            }, 1000);
+        }
+
+        // 暫停跑步
+        function pauseRun() {
+            if (isRunning) {
+                clearInterval(timer);
+                stopMetronome();
+                isRunning = false;
+                pauseButton.textContent = '繼續';
+            } else {
+                startTimer();
+                startMetronome(parseInt(runBpmInput.value), metronomeSound.value);
+                pauseButton.textContent = '暫停';
+            }
+        }
+
+        // 重啟跑步
+        function restartRun() {
+            clearInterval(timer);
+            stopMetronome();
+            runPage.classList.add('hidden');
+            homePage.classList.remove('hidden');
+            completionMessage.classList.remove('show');
+        }
+
+        // 開始節拍器
+        function startMetronome(bpm, soundChoice) {
+            const audio = new Audio(`${soundChoice}.mp3`);
+            const interval = 60000 / bpm; // 計算每拍之間的間隔（毫秒）
+            
+            function playBeat() {
+                audio.currentTime = 0; // 重置音頻到開始
+                audio.play();
+            }
+
+            playBeat(); // 立即播放第一拍
+            metronome = setInterval(playBeat, interval);
+        }
+
+        // 停止節拍器
+        function stopMetronome() {
+            clearInterval(metronome);
+        }
+
+        // 顯示完成訊息
+        function showCompletionMessage() {
+            completionMessage.classList.remove('hidden');
+            completionMessage.classList.add('show');
+        }
+
+        // 返回首頁
+        function backToHome() {
+            completionMessage.classList.remove('show');
+            runPage.classList.add('hidden');
+            homePage.classList.remove('hidden');
+        }
+
+        // TODO: 實現紀錄功能
+        recordButton.addEventListener('click', () => {
+            alert('紀錄功能尚未實現');
+        });
+    </script>
+</body>
+</html>
