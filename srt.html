@@ -1,0 +1,609 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字幕整理工具 - ㄚ亮笑長練功坊</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 80% 0%, hsla(189, 100%, 56%, 0.1) 0px, transparent 50%),
+                radial-gradient(at 0% 50%, hsla(355, 100%, 93%, 0.1) 0px, transparent 50%);
+            background-attachment: fixed;
+            background-size: cover;
+        }
+        textarea {
+            resize: none;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #475569 0%, #334155 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(71, 85, 105, 0.3);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-success:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+        }
+        .card {
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: translateY(-2px);
+        }
+        .input-file {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        .input-file input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .input-file-label {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            color: #334155;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .input-file:hover .input-file-label {
+            background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+        }
+        /* 自定義核取方塊樣式 */
+        .custom-checkbox {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .custom-checkbox input[type="checkbox"] {
+            height: 0;
+            width: 0;
+            opacity: 0;
+            position: absolute;
+        }
+        .custom-checkbox .checkbox-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #8b5cf6;
+            border-radius: 4px;
+            position: relative;
+            margin-right: 8px;
+            transition: all 0.2s ease;
+        }
+        .custom-checkbox input[type="checkbox"]:checked + .checkbox-icon {
+            background-color: #8b5cf6;
+        }
+        .custom-checkbox input[type="checkbox"]:checked + .checkbox-icon:after {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        .custom-checkbox:hover .checkbox-icon {
+            border-color: #6d28d9;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-10">
+    <div class="container mx-auto px-4 max-w-5xl">
+        <header class="text-center mb-10">
+            <div class="gradient-bg inline-block px-6 py-3 rounded-2xl shadow-xl mb-4 transform hover:scale-105 transition-transform duration-300">
+                <h1 class="text-3xl md:text-4xl font-bold text-white">字幕整理工具</h1>
+            </div>
+        </header>
+
+        <!-- 輸入區域 -->
+        <div class="card p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-indigo-700 flex items-center">
+                <i class="fas fa-file-import mr-2"></i>
+                輸入原始 SRT
+            </h2>
+            
+            <div class="mb-6">
+                <label class="block text-gray-700 mb-2 font-medium">上傳 SRT 檔案</label>
+                <div class="input-file">
+                    <input type="file" id="fileInput" accept=".srt">
+                    <div class="input-file-label flex items-center justify-center">
+                        <i class="fas fa-cloud-upload-alt mr-2"></i>
+                        <span>選擇檔案或拖放至此</span>
+                    </div>
+                </div>
+                <p id="fileNameDisplay" class="mt-2 text-sm text-gray-500"></p>
+            </div>
+            
+            <div class="mb-6">
+                <label for="inputText" class="block text-gray-700 mb-2 font-medium">或貼上 SRT 內容</label>
+                <textarea id="inputText" rows="10" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300"
+                    placeholder="請貼上 SRT 字幕內容..."></textarea>
+            </div>
+            
+            <div class="flex flex-wrap justify-between items-center">
+                <div class="mb-4 md:mb-0 flex flex-wrap items-center gap-4">
+                    <div class="flex items-center">
+                        <label class="text-gray-700 mr-2 font-medium">每行字數限制:</label>
+                        <input type="number" id="charLimit" value="27" min="1" max="100" 
+                            class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300">
+                    </div>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="keepPunctuation" checked>
+                        <span class="checkbox-icon"></span>
+                        <span class="text-gray-700">是否需要標點符號</span>
+                    </label>
+                </div>
+                <button id="processBtn" class="btn-primary text-white font-medium py-3 px-6 rounded-lg shadow-lg flex items-center">
+                    <i class="fas fa-cogs mr-2"></i>
+                    處理字幕
+                </button>
+            </div>
+        </div>
+
+        <!-- 輸出區域 -->
+        <div class="card p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-indigo-700 flex items-center">
+                <i class="fas fa-file-export mr-2"></i>
+                處理結果
+            </h2>
+            
+            <div class="mb-6">
+                <textarea id="outputText" rows="10" readonly
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none transition-all duration-300"
+                    placeholder="處理後的 SRT 內容將顯示在這裡..."></textarea>
+            </div>
+            
+            <div class="flex flex-wrap justify-end space-x-0 space-y-3 sm:space-x-4 sm:space-y-0">
+                <button id="copyBtn" class="btn-secondary text-white font-medium py-3 px-6 rounded-lg shadow-lg flex items-center w-full sm:w-auto">
+                    <i class="fas fa-copy mr-2"></i>
+                    複製結果
+                </button>
+                <button id="downloadBtn" class="btn-success text-white font-medium py-3 px-6 rounded-lg shadow-lg flex items-center w-full sm:w-auto">
+                    <i class="fas fa-download mr-2"></i>
+                    下載 SRT 檔案
+                </button>
+            </div>
+        </div>
+
+        <!-- 說明區域 -->
+        <div class="card p-6">
+            <h2 class="text-xl font-semibold mb-4 text-indigo-700 flex items-center">
+                <i class="fas fa-info-circle mr-2"></i>
+                使用說明
+            </h2>
+            <ul class="list-disc pl-5 space-y-2 text-gray-700">
+                <li>上傳 SRT 檔案或直接貼上 SRT 內容</li>
+                <li>設定每行最大字數限制（預設為 27 個中文字）</li>
+                <li>選擇是否保留標點符號（若取消勾選，將移除所有標點符號）</li>
+                <li>點擊「處理字幕」按鈕進行處理</li>
+                <li>處理後的結果會自動將超過字數限制的字幕分行，並重新分配時間碼</li>
+                <li>單字字幕會與前後行平均分配字數，使字幕更加平衡</li>
+                <li>可以複製結果或下載為 SRT 檔案</li>
+            </ul>
+        </div>
+    </div>
+
+    <footer class="mt-12 text-center text-gray-500 pb-8">
+        <p>本工具在瀏覽器中本地運行，不會上傳您的字幕內容</p>
+        <a href="https://lin.ee/qdq2oQh" target="_blank" class="inline-flex items-center mt-2 text-indigo-500 hover:text-indigo-700 transition-colors">
+            <span>ㄚ亮笑長練功坊</span>
+            <i class="fas fa-external-link-alt ml-1 text-xs"></i>
+        </a>
+        <p class="mt-1">© 2023</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            const inputText = document.getElementById('inputText');
+            const charLimit = document.getElementById('charLimit');
+            const keepPunctuation = document.getElementById('keepPunctuation');
+            const processBtn = document.getElementById('processBtn');
+            const outputText = document.getElementById('outputText');
+            const copyBtn = document.getElementById('copyBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            // 處理檔案上傳
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                fileNameDisplay.textContent = `已選擇: ${file.name}`;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    inputText.value = e.target.result;
+                };
+                reader.readAsText(file);
+            });
+
+            // 處理字幕按鈕
+            processBtn.addEventListener('click', function() {
+                const srtContent = inputText.value.trim();
+                if (!srtContent) {
+                    showNotification('請輸入 SRT 內容或上傳 SRT 檔案', 'error');
+                    return;
+                }
+
+                const limit = parseInt(charLimit.value);
+                if (isNaN(limit) || limit < 1) {
+                    showNotification('請輸入有效的字數限制', 'error');
+                    return;
+                }
+
+                try {
+                    const processedSrt = processSrt(srtContent, limit, keepPunctuation.checked);
+                    outputText.value = processedSrt;
+                    showNotification('字幕處理完成！', 'success');
+                } catch (error) {
+                    showNotification('處理過程中發生錯誤，請檢查 SRT 格式是否正確', 'error');
+                    console.error(error);
+                }
+            });
+
+            // 複製結果
+            copyBtn.addEventListener('click', function() {
+                if (!outputText.value) {
+                    showNotification('沒有可複製的內容', 'error');
+                    return;
+                }
+                
+                outputText.select();
+                document.execCommand('copy');
+                
+                // 顯示複製成功提示
+                showNotification('已複製到剪貼簿！', 'success');
+            });
+
+            // 下載 SRT 檔案
+            downloadBtn.addEventListener('click', function() {
+                const content = outputText.value;
+                if (!content) {
+                    showNotification('沒有可下載的內容', 'error');
+                    return;
+                }
+
+                // 使用 Blob 和 URL.createObjectURL 創建下載連結
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                
+                // 創建一個臨時的 <a> 元素來觸發下載
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'processed_subtitle.srt';
+                
+                // 添加到 DOM，觸發點擊，然後移除
+                document.body.appendChild(a);
+                a.click();
+                
+                // 清理
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showNotification('下載已開始！', 'success');
+                }, 100);
+            });
+
+            // 顯示通知
+            function showNotification(message, type) {
+                // 創建通知元素
+                const notification = document.createElement('div');
+                notification.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white flex items-center transition-all duration-300 transform translate-y-20 opacity-0`;
+                
+                // 根據類型設置樣式
+                if (type === 'success') {
+                    notification.classList.add('bg-green-600');
+                    notification.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ${message}`;
+                } else if (type === 'error') {
+                    notification.classList.add('bg-red-600');
+                    notification.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i> ${message}`;
+                }
+                
+                // 添加到 DOM
+                document.body.appendChild(notification);
+                
+                // 顯示通知
+                setTimeout(() => {
+                    notification.classList.remove('translate-y-20', 'opacity-0');
+                }, 10);
+                
+                // 3秒後隱藏通知
+                setTimeout(() => {
+                    notification.classList.add('translate-y-20', 'opacity-0');
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 3000);
+            }
+
+            // 處理 SRT 內容的主要函數
+            function processSrt(srtContent, charLimit, keepPunctuation) {
+                // 分割成字幕塊
+                const blocks = srtContent.split(/\r?\n\r?\n/).filter(block => block.trim() !== '');
+                
+                // 先解析所有字幕塊，以便後續處理單字字幕
+                let parsedBlocks = [];
+                
+                for (const block of blocks) {
+                    const lines = block.split(/\r?\n/);
+                    
+                    // 至少需要3行（編號、時間碼、文字）
+                    if (lines.length < 3) continue;
+                    
+                    // 解析時間碼
+                    const timeCodeLine = lines[1];
+                    const timeCodeMatch = timeCodeLine.match(/(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/);
+                    if (!timeCodeMatch) continue;
+                    
+                    const startTime = timeCodeMatch[1];
+                    const endTime = timeCodeMatch[2];
+                    
+                    // 合併所有文字行
+                    let textContent = lines.slice(2).join(' ').replace(/\s+/g, ' ').trim();
+                    
+                    // 如果不需要標點符號，則移除
+                    if (!keepPunctuation) {
+                        textContent = textContent.replace(/[，。！？；：,.!?;:]/g, '');
+                    }
+                    
+                    parsedBlocks.push({
+                        index: parseInt(lines[0]),
+                        startTime,
+                        endTime,
+                        text: textContent,
+                        isSingleChar: textContent.length === 1
+                    });
+                }
+                
+                // 處理單字字幕，與前後行平均分配字數
+                for (let i = 0; i < parsedBlocks.length; i++) {
+                    if (parsedBlocks[i].isSingleChar) {
+                        // 嘗試與前一行合併
+                        if (i > 0 && !parsedBlocks[i-1].isSingleChar) {
+                            const prevBlock = parsedBlocks[i-1];
+                            const currentBlock = parsedBlocks[i];
+                            
+                            // 合併文字
+                            prevBlock.text += currentBlock.text;
+                            prevBlock.endTime = currentBlock.endTime;
+                            
+                            // 標記當前塊為已合併
+                            currentBlock.merged = true;
+                            continue;
+                        }
+                        
+                        // 如果無法與前一行合併，嘗試與後一行合併
+                        if (i < parsedBlocks.length - 1 && !parsedBlocks[i+1].isSingleChar) {
+                            const currentBlock = parsedBlocks[i];
+                            const nextBlock = parsedBlocks[i+1];
+                            
+                            // 合併文字
+                            nextBlock.text = currentBlock.text + nextBlock.text;
+                            nextBlock.startTime = currentBlock.startTime;
+                            
+                            // 標記當前塊為已合併
+                            currentBlock.merged = true;
+                        }
+                    }
+                }
+                
+                // 過濾掉已合併的塊
+                parsedBlocks = parsedBlocks.filter(block => !block.merged);
+                
+                // 重新處理字幕塊，分割超過字數限制的塊
+                let processedBlocks = [];
+                let newIndex = 1;
+                
+                for (const block of parsedBlocks) {
+                    // 如果文字內容不超過限制，直接添加
+                    if (block.text.length <= charLimit) {
+                        const timeCodeLine = `${block.startTime} --> ${block.endTime}`;
+                        processedBlocks.push(`${newIndex++}\n${timeCodeLine}\n${block.text}\n`);
+                        continue;
+                    }
+                    
+                    // 需要分割的情況
+                    const chunks = splitText(block.text, charLimit, keepPunctuation);
+                    const timeSlots = splitTimeCode(block.startTime, block.endTime, chunks.length);
+                    
+                    // 為每個分割的文字創建新的字幕塊
+                    for (let i = 0; i < chunks.length; i++) {
+                        const newTimeCode = `${timeSlots[i].start} --> ${timeSlots[i].end}`;
+                        processedBlocks.push(`${newIndex++}\n${newTimeCode}\n${chunks[i]}\n`);
+                    }
+                }
+                
+                return processedBlocks.join('\n');
+            }
+
+            // 將文字分割成多個塊，每塊不超過字符限制
+            function splitText(text, limit, keepPunctuation) {
+                const chunks = [];
+                let currentChunk = '';
+                
+                // 根據是否保留標點符號決定分割方式
+                let segments;
+                if (keepPunctuation) {
+                    // 先按標點符號和空格分割
+                    segments = text.split(/([，。！？；：,.!?;:\s])/).filter(seg => seg !== '');
+                } else {
+                    // 如果不保留標點符號，直接按字符分割
+                    segments = text.split('');
+                }
+                
+                for (let i = 0; i < segments.length; i++) {
+                    const segment = segments[i];
+                    
+                    // 如果當前段加上新片段不超過限制，則添加
+                    if ((currentChunk + segment).length <= limit) {
+                        currentChunk += segment;
+                    } else {
+                        // 如果當前段已經有內容，先保存
+                        if (currentChunk) {
+                            chunks.push(currentChunk);
+                            currentChunk = '';
+                        }
+                        
+                        // 如果單個片段超過限制，需要進一步分割
+                        if (segment.length > limit) {
+                            let j = 0;
+                            while (j < segment.length) {
+                                chunks.push(segment.substr(j, limit));
+                                j += limit;
+                            }
+                        } else {
+                            currentChunk = segment;
+                        }
+                    }
+                }
+                
+                // 添加最後一個塊
+                if (currentChunk) {
+                    chunks.push(currentChunk);
+                }
+                
+                return chunks;
+            }
+
+            // 將時間碼平均分配給多個文字塊
+            function splitTimeCode(startTime, endTime, count) {
+                const startMs = timeToMs(startTime);
+                const endMs = timeToMs(endTime);
+                const duration = endMs - startMs;
+                const segmentDuration = duration / count;
+                
+                const timeSlots = [];
+                for (let i = 0; i < count; i++) {
+                    const segmentStart = startMs + i * segmentDuration;
+                    const segmentEnd = segmentStart + segmentDuration;
+                    
+                    timeSlots.push({
+                        start: msToTime(Math.round(segmentStart)),
+                        end: msToTime(Math.round(segmentEnd))
+                    });
+                }
+                
+                return timeSlots;
+            }
+
+            // 將時間碼轉換為毫秒
+            function timeToMs(timeCode) {
+                const [time, ms] = timeCode.split(',');
+                const [hours, minutes, seconds] = time.split(':').map(Number);
+                
+                return hours * 3600000 + minutes * 60000 + seconds * 1000 + parseInt(ms);
+            }
+
+            // 將毫秒轉換為時間碼
+            function msToTime(ms) {
+                const hours = Math.floor(ms / 3600000);
+                const minutes = Math.floor((ms % 3600000) / 60000);
+                const seconds = Math.floor((ms % 60000) / 1000);
+                const milliseconds = ms % 1000;
+                
+                return `${padZero(hours)}:${padZero(minutes)}:${padZero(seconds)},${padZero(milliseconds, 3)}`;
+            }
+
+            // 補零函數
+            function padZero(num, length = 2) {
+                return num.toString().padStart(length, '0');
+            }
+
+            // 拖放功能
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            const dropArea = document.querySelector('.input-file');
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropArea.querySelector('.input-file-label').classList.add('bg-indigo-100', 'border-indigo-300');
+            }
+
+            function unhighlight() {
+                dropArea.querySelector('.input-file-label').classList.remove('bg-indigo-100', 'border-indigo-300');
+            }
+
+            dropArea.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    const file = files[0];
+                    fileNameDisplay.textContent = `已選擇: ${file.name}`;
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        inputText.value = e.target.result;
+                    };
+                    reader.readAsText(file);
+                }
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93c75cb56482843c',t:'MTc0NjY5MDU4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
