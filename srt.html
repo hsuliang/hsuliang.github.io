@@ -1,10 +1,11 @@
 
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>字幕整理工具 - ㄚ亮笑長練功坊</title>
+    <title>字幕整理工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -223,7 +224,9 @@
                 <li>選擇是否保留標點符號（若取消勾選，將移除所有標點符號）</li>
                 <li>點擊「處理字幕」按鈕進行處理</li>
                 <li>處理後的結果會自動將超過字數限制的字幕分行，並重新分配時間碼</li>
-                <li>單字字幕會與前後行平均分配字數，使字幕更加平衡</li>
+                <li>單字字幕會併入下一行，使字幕更加平衡</li>
+                <li>每行第一個字不會是標點符號</li>
+                <li>英文單字不會被切分，確保完整性</li>
                 <li>可以複製結果或下載為 SRT 檔案</li>
             </ul>
         </div>
@@ -403,25 +406,11 @@
                     });
                 }
                 
-                // 處理單字字幕，與前後行平均分配字數
+                // 處理單字字幕，與下一行合併
                 for (let i = 0; i < parsedBlocks.length; i++) {
-                    if (parsedBlocks[i].isSingleChar) {
-                        // 嘗試與前一行合併
-                        if (i > 0 && !parsedBlocks[i-1].isSingleChar) {
-                            const prevBlock = parsedBlocks[i-1];
-                            const currentBlock = parsedBlocks[i];
-                            
-                            // 合併文字
-                            prevBlock.text += currentBlock.text;
-                            prevBlock.endTime = currentBlock.endTime;
-                            
-                            // 標記當前塊為已合併
-                            currentBlock.merged = true;
-                            continue;
-                        }
-                        
-                        // 如果無法與前一行合併，嘗試與後一行合併
-                        if (i < parsedBlocks.length - 1 && !parsedBlocks[i+1].isSingleChar) {
+                    if (parsedBlocks[i].isSingleChar || parsedBlocks[i].text.length === 1) {
+                        // 嘗試與下一行合併
+                        if (i < parsedBlocks.length - 1) {
                             const currentBlock = parsedBlocks[i];
                             const nextBlock = parsedBlocks[i+1];
                             
@@ -451,7 +440,7 @@
                     }
                     
                     // 需要分割的情況
-                    const chunks = splitText(block.text, charLimit, keepPunctuation);
+                    const chunks = splitTextWithRules(block.text, charLimit, keepPunctuation);
                     const timeSlots = splitTimeCode(block.startTime, block.endTime, chunks.length);
                     
                     // 為每個分割的文字創建新的字幕塊
@@ -464,50 +453,98 @@
                 return processedBlocks.join('\n');
             }
 
-            // 將文字分割成多個塊，每塊不超過字符限制
-            function splitText(text, limit, keepPunctuation) {
+            // 將文字分割成多個塊，遵循規則：
+            // 1. 每塊不超過字符限制
+            // 2. 保持英文單字完整性
+            // 3. 每行第一個字不是標點符號
+            function splitTextWithRules(text, limit, keepPunctuation) {
                 const chunks = [];
                 let currentChunk = '';
                 
-                // 根據是否保留標點符號決定分割方式
-                let segments;
-                if (keepPunctuation) {
-                    // 先按標點符號和空格分割
-                    segments = text.split(/([，。！？；：,.!?;:\s])/).filter(seg => seg !== '');
-                } else {
-                    // 如果不保留標點符號，直接按字符分割
-                    segments = text.split('');
+                // 定義標點符號正則表達式
+                const punctuationRegex = /[，。！？；：,.!?;:]/;
+                
+                // 使用正則表達式分割文本，保持英文單字和標點符號的完整性
+                const regex = keepPunctuation ? 
+                    /([a-zA-Z]+|[，。！？；：,.!?;:]|[\u4e00-\u9fa5]|\s+)/g : 
+                    /([a-zA-Z]+|[\u4e00-\u9fa5]|\s+)/g;
+                
+                const segments = [];
+                let match;
+                while ((match = regex.exec(text)) !== null) {
+                    segments.push(match[0]);
                 }
                 
                 for (let i = 0; i < segments.length; i++) {
                     const segment = segments[i];
                     
-                    // 如果當前段加上新片段不超過限制，則添加
+                    // 檢查添加這個片段是否會超過限制
                     if ((currentChunk + segment).length <= limit) {
                         currentChunk += segment;
                     } else {
-                        // 如果當前段已經有內容，先保存
-                        if (currentChunk) {
-                            chunks.push(currentChunk);
+                        // 如果當前塊不為空，保存它
+                        if (currentChunk.trim()) {
+                            chunks.push(currentChunk.trim());
                             currentChunk = '';
                         }
                         
-                        // 如果單個片段超過限制，需要進一步分割
-                        if (segment.length > limit) {
-                            let j = 0;
-                            while (j < segment.length) {
-                                chunks.push(segment.substr(j, limit));
-                                j += limit;
+                        // 如果當前片段是英文單字，且添加後會超過限制，則開始新塊
+                        if (/^[a-zA-Z]+$/.test(segment)) {
+                            // 如果單個英文單字超過限制，需要進一步分割（極少情況）
+                            if (segment.length > limit) {
+                                let j = 0;
+                                while (j < segment.length) {
+                                    chunks.push(segment.substr(j, limit));
+                                    j += limit;
+                                }
+                            } else {
+                                currentChunk = segment;
                             }
-                        } else {
-                            currentChunk = segment;
+                        } 
+                        // 如果當前片段是中文字符或標點符號
+                        else {
+                            // 如果單個中文字符或標點符號超過限制（不太可能），需要進一步分割
+                            if (segment.length > limit) {
+                                let j = 0;
+                                while (j < segment.length) {
+                                    chunks.push(segment.substr(j, limit));
+                                    j += limit;
+                                }
+                            } else {
+                                currentChunk = segment;
+                            }
                         }
                     }
                 }
                 
                 // 添加最後一個塊
-                if (currentChunk) {
-                    chunks.push(currentChunk);
+                if (currentChunk.trim()) {
+                    chunks.push(currentChunk.trim());
+                }
+                
+                // 處理每行第一個字不能是標點符號的規則
+                for (let i = 0; i < chunks.length; i++) {
+                    // 檢查當前塊是否以標點符號開頭
+                    if (keepPunctuation && chunks[i].length > 0 && punctuationRegex.test(chunks[i][0])) {
+                        // 如果是第一個塊，無法處理，跳過
+                        if (i === 0) continue;
+                        
+                        // 將開頭的標點符號移到前一個塊的結尾
+                        let j = 0;
+                        while (j < chunks[i].length && punctuationRegex.test(chunks[i][j])) {
+                            j++;
+                        }
+                        
+                        const punctuations = chunks[i].substring(0, j);
+                        chunks[i-1] += punctuations;
+                        chunks[i] = chunks[i].substring(j);
+                        
+                        // 如果移除標點符號後當前塊為空，則刪除它
+                        if (chunks[i].trim() === '') {
+                            chunks.splice(i, 1);
+                            i--;
+                        }
+                    }
                 }
                 
                 return chunks;
@@ -605,5 +642,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93c75cb56482843c',t:'MTc0NjY5MDU4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9527d066950da3ac',t:'MTc1MDM4NjMxMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
