@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>噗噗聊聊100年會心跳300</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+            background-color: #0f172a;
+        }
+        
+        .digit {
+            position: relative;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 160px;
+            height: 240px;
+            margin: 0 8px;
+            border-radius: 16px;
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.5);
+            border: 2px solid rgba(56, 189, 248, 0.3);
+            color: #38bdf8;
+            font-size: 8rem;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.7);
+            transition: all 0.3s ease;
+        }
+        
+        .digit:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.8), transparent);
+            animation: scanline 2s linear infinite;
+        }
+        
+        .colon {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 240px;
+            color: #38bdf8;
+            font-size: 8rem;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+        
+        .warning .digit {
+            color: #ef4444;
+            box-shadow: 0 0 40px rgba(239, 68, 68, 0.7);
+            border: 2px solid rgba(239, 68, 68, 0.5);
+            text-shadow: 0 0 20px rgba(239, 68, 68, 0.9);
+        }
+        
+        .warning .digit:before {
+            background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.8), transparent);
+        }
+        
+        .warning .colon {
+            color: #ef4444;
+        }
+        
+        .btn {
+            position: relative;
+            padding: 16px 32px;
+            background: rgba(30, 41, 59, 0.8);
+            color: #38bdf8;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            text-shadow: 0 0 5px rgba(56, 189, 248, 0.7);
+            margin: 0 15px;
+        }
+        
+        .btn:hover {
+            background: rgba(56, 189, 248, 0.2);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+        }
+        
+        .btn:before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 10px;
+            height: 10px;
+            background-color: rgba(56, 189, 248, 0.5);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+            border-radius: 50%;
+            animation: buttonParticle 3s linear infinite;
+        }
+        
+        .btn:after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            right: -10px;
+            width: 10px;
+            height: 10px;
+            background-color: rgba(56, 189, 248, 0.5);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+            border-radius: 50%;
+            animation: buttonParticle 3s linear infinite 1.5s;
+        }
+        
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background-color: rgba(56, 189, 248, 0.7);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+        }
+        
+        .grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(56, 189, 248, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -2;
+        }
+        
+        .pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.1);
+            z-index: -1;
+            animation: pulse 4s infinite;
+        }
+        
+        .title {
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.7);
+            letter-spacing: 2px;
+        }
+        
+        .title-animated {
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.7);
+            letter-spacing: 2px;
+            animation: titleHeartbeat 2s ease-in-out infinite;
+            color: #38bdf8;
+        }
+        
+        .time-btn {
+            font-size: 2rem !important;
+            width: 60px;
+            height: 60px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .subtitle {
+            /* Increased font size by 30% */
+            font-size: 6.5rem; /* Up from 5rem (6.5 is ~30% larger) */
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.9);
+            letter-spacing: 3px;
+            animation: heartbeat 1.5s ease-in-out infinite;
+            color: #38bdf8;
+        }
+        
+        @keyframes heartbeat {
+            0%, 100% {
+                transform: scale(1);
+                text-shadow: 0 0 15px rgba(56, 189, 248, 0.9);
+                color: #38bdf8;
+            }
+            50% {
+                transform: scale(1.05);
+                text-shadow: 0 0 30px rgba(6, 182, 212, 1);
+                color: #22d3ee; /* Enhanced color change to cyan */
+            }
+        }
+        
+        @keyframes titleHeartbeat {
+            0%, 100% {
+                transform: scale(1);
+                text-shadow: 0 0 10px rgba(56, 189, 248, 0.7);
+                color: #38bdf8;
+            }
+            50% {
+                transform: scale(1.03);
+                text-shadow: 0 0 20px rgba(34, 211, 238, 1);
+                color: #22d3ee;
+            }
+        }
+        
+        @keyframes scanline {
+            0% {
+                top: 0%;
+            }
+            100% {
+                top: 100%;
+            }
+        }
+        
+        @keyframes blink {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        @keyframes buttonParticle {
+            0% {
+                transform: rotate(0deg) translateX(20px) rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg) translateX(20px) rotate(-360deg);
+            }
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0.8;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.2;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0.8;
+            }
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        .explosion {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(239, 68, 68, 0.8) 0%, rgba(239, 68, 68, 0) 70%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+            transition: opacity 0.5s ease;
+        }
+        
+        /* Added responsive adjustments for the larger timer */
+        @media (max-width: 768px) {
+            .digit {
+                width: 80px;
+                height: 120px;
+                font-size: 4rem;
+                margin: 0 4px;
+                border-radius: 8px;
+            }
+            
+            .colon {
+                width: 20px;
+                height: 120px;
+                font-size: 4rem;
+            }
+            
+            .subtitle {
+                font-size: 3.5rem; /* Responsive size for mobile */
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen">
+    <div class="grid"></div>
+    <div class="pulse"></div>
+    <div class="particles" id="particles"></div>
+    <div class="explosion" id="explosion"></div>
+    
+    <div class="title-container text-center mb-10">
+        <h1 class="title-animated text-8xl md:text-9xl font-bold mt-2">噗噗聊聊100年會</h1>
+    </div>
+    
+    <div class="timer-container mb-10 flex flex-wrap justify-center" id="timer">
+        <div class="digit" id="minute-tens">0</div>
+        <div class="digit" id="minute-ones">5</div>
+        <div class="colon">:</div>
+        <div class="digit" id="second-tens">0</div>
+        <div class="digit" id="second-ones">0</div>
+    </div>
+    
+    <div class="controls flex flex-wrap justify-center items-center">
+        <button class="btn time-btn" id="minus-btn">－</button>
+        <button class="btn" id="start-btn">開始</button>
+        <button class="btn" id="reset-btn">重置</button>
+        <button class="btn time-btn" id="plus-btn">＋</button>
+    </div>
+    
+    <script>
+        // Timer variables
+        let totalSeconds = 5 * 60; // 5 minutes
+        let currentSeconds = totalSeconds;
+        let timerInterval = null;
+        let isRunning = false;
+        let warningThreshold = 30; // 30 seconds warning
+        let lastTickSecond = -1; // To track the last second a tick sound was played
+        
+        // DOM elements
+        const minuteTens = document.getElementById('minute-tens');
+        const minuteOnes = document.getElementById('minute-ones');
+        const secondTens = document.getElementById('second-tens');
+        const secondOnes = document.getElementById('second-ones');
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const plusBtn = document.getElementById('plus-btn');
+        const minusBtn = document.getElementById('minus-btn');
+        const timerContainer = document.getElementById('timer');
+        const explosion = document.getElementById('explosion');
+
+        // Audio elements (Updated to local paths)
+        const tickSound = new Audio('coco.mp3'); // Local tick sound file (coco.mp3)
+        const explosionSound = new Audio('boom.mp3'); // Local explosion sound file (boom.mp3)
+
+        // Update timer display
+        function updateDisplay() {
+            const minutes = Math.floor(currentSeconds / 60);
+            const seconds = currentSeconds % 60;
+            
+            minuteTens.textContent = Math.floor(minutes / 10);
+            minuteOnes.textContent = minutes % 10;
+            secondTens.textContent = Math.floor(seconds / 10);
+            secondOnes.textContent = seconds % 10;
+            
+            // Warning when less than 30 seconds remaining
+            if (currentSeconds <= warningThreshold && currentSeconds > 0) {
+                timerContainer.classList.add('warning');
+                // Play tick sound every second in the warning phase
+                if (currentSeconds !== lastTickSecond) { // Condition changed back to every second
+                    tickSound.currentTime = 0; // Rewind to start
+                    tickSound.play();
+                    lastTickSecond = currentSeconds; // Update last played second
+                }
+            } else {
+                timerContainer.classList.remove('warning');
+                lastTickSecond = -1; // Reset when out of warning phase
+            }
+            
+            // Time's up
+            if (currentSeconds === 0) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                startBtn.textContent = '開始';
+                
+                // Show explosion effect and play sound
+                explosion.style.opacity = '1';
+                explosionSound.currentTime = 0; // Rewind to start
+                explosionSound.play();
+                setTimeout(() => {
+                    explosion.style.opacity = '0';
+                }, 1000);
+            }
+        }
+        
+        // Start/pause timer
+        startBtn.addEventListener('click', () => {
+            if (isRunning) {
+                // Pause timer
+                clearInterval(timerInterval);
+                isRunning = false;
+                startBtn.textContent = '開始';
+            } else {
+                // Start timer
+                if (currentSeconds > 0) {
+                    isRunning = true;
+                    startBtn.textContent = '暫停';
+                    
+                    timerInterval = setInterval(() => {
+                        currentSeconds--;
+                        updateDisplay();
+                    }, 1000);
+                } else {
+                    // If timer is at 0, reset it first
+                    currentSeconds = totalSeconds;
+                    updateDisplay();
+                    isRunning = true;
+                    startBtn.textContent = '暫停';
+                    
+                    timerInterval = setInterval(() => {
+                        currentSeconds--;
+                        updateDisplay();
+                    }, 1000);
+                }
+            }
+        });
+        
+        // Reset timer
+        resetBtn.addEventListener('click', () => {
+            clearInterval(timerInterval);
+            isRunning = false;
+            currentSeconds = totalSeconds;
+            startBtn.textContent = '開始';
+            updateDisplay();
+            timerContainer.classList.remove('warning');
+            lastTickSecond = -1; // Reset tick sound tracker
+        });
+        
+        // Add one minute
+        plusBtn.addEventListener('click', () => {
+            if (!isRunning) {
+                currentSeconds += 60; // Add 60 seconds (1 minute)
+                totalSeconds = currentSeconds; // Update total time
+                updateDisplay();
+            }
+        });
+        
+        // Subtract one minute
+        minusBtn.addEventListener('click', () => {
+            if (!isRunning && currentSeconds > 60) {
+                currentSeconds -= 60; // Subtract 60 seconds (1 minute)
+                totalSeconds = currentSeconds; // Update total time
+                updateDisplay();
+            }
+        });
+        
+        // Initialize display
+        updateDisplay();
+        
+        // Create background particles
+        const particlesContainer = document.getElementById('particles');
+        const particleCount = 50;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            
+            // Random position
+            const x = Math.random() * 100;
+            const y = Math.random() * 100;
+            
+            // Random size
+            const size = Math.random() * 3 + 1;
+            
+            // Random animation duration
+            const duration = Math.random() * 20 + 10;
+            
+            particle.style.left = `${x}%`;
+            particle.style.top = `${y}%`;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.opacity = Math.random() * 0.5 + 0.3;
+            
+            // Add floating animation
+            particle.style.animation = `float ${duration}s infinite alternate ease-in-out`;
+            particle.style.animationDelay = `${Math.random() * 5}s`;
+            
+            particlesContainer.appendChild(particle);
+        }
+    </script>
+</body>
+</html>
