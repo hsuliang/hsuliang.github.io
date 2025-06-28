@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>丫亮校長YouTube 章節生成器</title>
+    <!-- 引入 Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 自定義 Tailwind 配置，確保使用 Inter 字體 */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* 隱藏檔案輸入框，通過按鈕觸發 */
+        .hidden-file-input {
+            display: none;
+        }
+        /* 自定義提示訊息樣式 */
+        .message-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50; /* 綠色背景 */
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none; /* 讓訊息框不阻擋下方事件 */
+        }
+        .message-box.show {
+            opacity: 1;
+        }
+        /* 拖曳上傳時的邊框樣式 */
+        .drag-over {
+            border-color: #2563eb !important; /* 藍色邊框 */
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.5); /* 藍色光暈 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 min-h-screen flex items-center justify-center">
+    <div class="container mx-auto max-w-4xl bg-white p-6 md:p-8 rounded-xl shadow-lg space-y-6">
+        <!-- 網頁標題 -->
+        <h1 class="text-3xl md:text-4xl font-bold text-center text-blue-700 mb-6">丫亮校長YouTube 章節生成器</h1>
+
+        <!-- 上傳區塊 -->
+        <div class="upload-section space-y-4">
+            <h2 class="text-xl md:text-2xl font-semibold text-gray-700">請上傳 YouTube 逐字稿或 SRT 字幕檔</h2>
+            
+            <!-- 逐字稿輸入框，現在支援拖曳上傳 -->
+            <textarea
+                id="transcriptInput"
+                class="w-full h-40 p-4 border-2 border-dashed border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-base resize-y transition-all duration-200"
+                placeholder="請將 YouTube 影片逐字稿或 SRT 內容貼在此處，或將檔案拖曳到此處..."
+            ></textarea>
+            
+            <!-- 檔案上傳按鈕 (實際是標籤，隱藏了 input type="file") -->
+            <label for="fileInput" class="inline-block bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg cursor-pointer transition-colors duration-200">
+                選擇本地檔案 (.txt, .srt)
+            </label>
+            <input type="file" id="fileInput" accept=".txt,.srt" class="hidden-file-input">
+            
+            <p class="text-sm text-gray-500 mt-2">
+                提示：支援 .txt 或 .srt 檔案。SRT 檔案內容會直接載入，時間戳記等資訊需在後端處理。
+            </p>
+        </div>
+
+        <!-- 功能按鈕區塊 -->
+        <div class="button-section flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4 mt-6">
+            <button
+                id="generateButton"
+                class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-200 shadow-md"
+            >
+                生成 YouTube 章節
+            </button>
+            <button
+                id="clearButton"
+                class="bg-red-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-4 focus:ring-red-300 transition-all duration-200 shadow-md"
+            >
+                清除內容
+            </button>
+        </div>
+
+        <!-- 章節顯示與複製區塊 -->
+        <div class="output-section space-y-4 mt-8">
+            <h2 class="text-xl md:text-2xl font-semibold text-gray-700">生成的 YouTube 章節</h2>
+            
+            <!-- 章節輸出區 -->
+            <pre
+                id="chaptersOutput"
+                class="w-full h-64 p-4 border border-gray-300 bg-gray-50 rounded-lg overflow-auto text-base whitespace-pre-wrap break-words"
+            >
+                <!-- 初始為空白，章節會顯示在此處 -->
+            </pre>
+            
+            <!-- 複製按鈕 -->
+            <button
+                id="copyButton"
+                class="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition-all duration-200 shadow-md"
+            >
+                複製章節
+            </button>
+        </div>
+
+        <!-- 作者資訊 -->
+        <div class="author-info text-center text-gray-600 text-sm mt-8 pt-4 border-t border-gray-200">
+            作者：<a href="https://bit.ly/Aliang" target="_blank" class="text-blue-600 hover:underline">ㄚ亮笑長練功坊</a>
+        </div>
+    </div>
+
+    <!-- 訊息提示框 -->
+    <div id="messageBox" class="message-box"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 獲取所有需要的 DOM 元素
+            const transcriptInput = document.getElementById('transcriptInput');
+            const fileInput = document.getElementById('fileInput');
+            const generateButton = document.getElementById('generateButton');
+            const clearButton = document.getElementById('clearButton');
+            const chaptersOutput = document.getElementById('chaptersOutput');
+            const copyButton = document.getElementById('copyButton');
+            const messageBox = document.getElementById('messageBox');
+
+            // 輔助函數：顯示臨時訊息
+            function showMessage(message, type = 'success') {
+                messageBox.textContent = message;
+                if (type === 'success') {
+                    messageBox.style.backgroundColor = '#4CAF50'; // 綠色
+                } else if (type === 'error') {
+                    messageBox.style.backgroundColor = '#f44336'; // 紅色
+                } else {
+                    messageBox.style.backgroundColor = '#2196F3'; // 藍色
+                }
+                messageBox.classList.add('show');
+                setTimeout(() => {
+                    messageBox.classList.remove('show');
+                }, 2000); // 訊息顯示 2 秒
+            }
+
+            // 處理檔案讀取的通用函數
+            function handleFile(file) {
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        transcriptInput.value = e.target.result;
+                        showMessage('檔案已載入！', 'info');
+                    };
+                    reader.onerror = () => {
+                        showMessage('檔案讀取失敗！', 'error');
+                    };
+                    reader.readAsText(file);
+                }
+            }
+
+            // 1. 檔案讀取功能 (通過選擇檔案按鈕)
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                handleFile(file);
+            });
+
+            // 2. 拖曳上傳功能
+            transcriptInput.addEventListener('dragover', (event) => {
+                event.preventDefault(); // 阻止預設行為，允許拖放
+                transcriptInput.classList.add('drag-over'); // 添加視覺提示
+            });
+
+            transcriptInput.addEventListener('dragleave', () => {
+                transcriptInput.classList.remove('drag-over'); // 移除視覺提示
+            });
+
+            transcriptInput.addEventListener('drop', (event) => {
+                event.preventDefault(); // 阻止預設行為
+                transcriptInput.classList.remove('drag-over'); // 移除視覺提示
+
+                const files = event.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    // 檢查檔案類型，只接受 .txt 或 .srt
+                    if (file.type === 'text/plain' || file.name.endsWith('.srt')) {
+                        handleFile(file);
+                    } else {
+                        showMessage('不支援的檔案類型，請上傳 .txt 或 .srt 檔案。', 'error');
+                    }
+                }
+            });
+
+            // 3. 生成按鈕點擊事件
+            generateButton.addEventListener('click', async () => {
+                const transcriptContent = transcriptInput.value.trim();
+
+                if (!transcriptContent) {
+                    showMessage('請先輸入或上傳逐字稿內容！', 'error');
+                    return;
+                }
+
+                chaptersOutput.textContent = '正在生成章節，請稍候...';
+                generateButton.disabled = true; // 禁用按鈕防止重複點擊
+                generateButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+                try {
+                    // 這裡使用 Gemini API 進行文本生成。
+                    // 實際的 API 呼叫會將 transcriptContent 作為 prompt 發送。
+                    // 調整 prompt 以明確要求只輸出章節列表，不包含任何前導語句。
+                    const prompt = `請根據以下 YouTube 逐字稿內容，生成一個簡潔的 YouTube 影片章節列表，大約 5 到 10 個章節。請確保每個章節都有一個明確的標題和對應的時間戳記 (例如：00:00 介紹)。
+                    請直接輸出章節列表，不要包含任何前導語句或額外說明。
+                    
+                    逐字稿內容：
+                    ${transcriptContent}
+                    
+                    請以以下格式輸出章節：
+                    00:00 章節標題 1
+                    01:23 章節標題 2
+                    05:45 章節標題 3
+                    ...
+                    `;
+
+                    // 確保 __app_id 和 __firebase_config 變數在運行時可用
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+                    let chatHistory = [];
+                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                    const payload = { contents: chatHistory };
+                    const apiKey = ""; // 如果您想使用 gemini-2.0-flash 以外的模型，請在這裡提供 API 密鑰。否則，請保留原樣。
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const generatedText = result.candidates[0].content.parts[0].text;
+                        chaptersOutput.textContent = generatedText;
+                        showMessage('章節生成成功！');
+                    } else {
+                        chaptersOutput.textContent = '無法生成章節。請檢查輸入內容或稍後再試。';
+                        showMessage('章節生成失敗！', 'error');
+                    }
+
+                } catch (error) {
+                    console.error('生成章節時發生錯誤:', error);
+                    chaptersOutput.textContent = '生成章節時發生錯誤。請檢查網路連線或稍後再試。';
+                    showMessage('生成失敗，請檢查錯誤！', 'error');
+                } finally {
+                    generateButton.disabled = false; // 重新啟用按鈕
+                    generateButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
+
+            // 4. 複製按鈕點擊事件
+            copyButton.addEventListener('click', () => {
+                const textToCopy = chaptersOutput.textContent.trim();
+
+                if (!textToCopy || textToCopy === '正在生成章節，請稍候...' || textToCopy === '無法生成章節。請檢查輸入內容或稍後再試。' || textToCopy === '生成章節時發生錯誤。請檢查網路連線或稍後再試。') {
+                    showMessage('沒有內容可複製！', 'info');
+                    return;
+                }
+
+                // 使用 document.execCommand('copy') 複製到剪貼簿
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = textToCopy;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                try {
+                    document.execCommand('copy');
+                    showMessage('已複製到剪貼簿！');
+                } catch (err) {
+                    console.error('複製失敗:', err);
+                    showMessage('複製失敗，請手動複製！', 'error');
+                } finally {
+                    document.body.removeChild(tempTextArea);
+                }
+            });
+
+            // 5. 清除按鈕點擊事件
+            clearButton.addEventListener('click', () => {
+                transcriptInput.value = '';
+                chaptersOutput.textContent = '';
+                showMessage('內容已清除！', 'info');
+            });
+        });
+    </script>
+</body>
+</html>
