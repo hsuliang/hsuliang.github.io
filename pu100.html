@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>噗噗聊聊100年會倒數計時器</title>
+    <title>噗噗聊聊100年會心跳300</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
@@ -303,8 +303,10 @@
                 font-size: 4rem;
             }
             
-            .subtitle {
-                font-size: 3.5rem; /* Responsive size for mobile */
+            /* Adjust spacing for hh:mm:ss on smaller screens */
+            .timer-container {
+                gap: 0; /* Remove gap if present */
+                justify-content: space-around; /* Distribute items evenly */
             }
         }
     </style>
@@ -320,6 +322,9 @@
     </div>
     
     <div class="timer-container mb-10 flex flex-wrap justify-center" id="timer">
+        <div class="digit" id="hour-tens">0</div>
+        <div class="digit" id="hour-ones">0</div>
+        <div class="colon">:</div>
         <div class="digit" id="minute-tens">0</div>
         <div class="digit" id="minute-ones">5</div>
         <div class="colon">:</div>
@@ -336,7 +341,7 @@
     
     <script>
         // Timer variables
-        let totalSeconds = 5 * 60; // 5 minutes
+        let totalSeconds = 5 * 60; // Default: 5 minutes (will display as 00:05:00)
         let currentSeconds = totalSeconds;
         let timerInterval = null;
         let isRunning = false;
@@ -344,6 +349,8 @@
         let lastTickSecond = -1; // To track the last second a tick sound was played
         
         // DOM elements
+        const hourTens = document.getElementById('hour-tens'); // New hour tens digit
+        const hourOnes = document.getElementById('hour-ones'); // New hour ones digit
         const minuteTens = document.getElementById('minute-tens');
         const minuteOnes = document.getElementById('minute-ones');
         const secondTens = document.getElementById('second-tens');
@@ -361,9 +368,12 @@
 
         // Update timer display
         function updateDisplay() {
-            const minutes = Math.floor(currentSeconds / 60);
-            const seconds = currentSeconds % 60;
+            const hours = Math.floor(currentSeconds / 3600); // Calculate hours
+            const minutes = Math.floor((currentSeconds % 3600) / 60); // Calculate minutes
+            const seconds = currentSeconds % 60; // Calculate seconds
             
+            hourTens.textContent = Math.floor(hours / 10);
+            hourOnes.textContent = hours % 10;
             minuteTens.textContent = Math.floor(minutes / 10);
             minuteOnes.textContent = minutes % 10;
             secondTens.textContent = Math.floor(seconds / 10);
@@ -373,7 +383,7 @@
             if (currentSeconds <= warningThreshold && currentSeconds > 0) {
                 timerContainer.classList.add('warning');
                 // Play tick sound every second in the warning phase
-                if (currentSeconds !== lastTickSecond) { // Condition changed back to every second
+                if (currentSeconds !== lastTickSecond) { 
                     tickSound.currentTime = 0; // Rewind to start
                     tickSound.play();
                     lastTickSecond = currentSeconds; // Update last played second
@@ -417,7 +427,7 @@
                         updateDisplay();
                     }, 1000);
                 } else {
-                    // If timer is at 0, reset it first
+                    // If timer is at 0, reset it first to totalSeconds
                     currentSeconds = totalSeconds;
                     updateDisplay();
                     isRunning = true;
@@ -435,27 +445,32 @@
         resetBtn.addEventListener('click', () => {
             clearInterval(timerInterval);
             isRunning = false;
-            currentSeconds = totalSeconds;
+            currentSeconds = 5 * 60; // Always reset to 5 minutes (300 seconds)
+            totalSeconds = 5 * 60; // Also set totalSeconds to 5 minutes for consistency when starting after reset
             startBtn.textContent = '開始';
             updateDisplay();
             timerContainer.classList.remove('warning');
             lastTickSecond = -1; // Reset tick sound tracker
         });
         
-        // Add one minute
+        // Add one minute (adjusts totalSeconds and currentSeconds for next start/reset)
         plusBtn.addEventListener('click', () => {
-            if (!isRunning) {
-                currentSeconds += 60; // Add 60 seconds (1 minute)
-                totalSeconds = currentSeconds; // Update total time
+            if (!isRunning) { // Only adjust totalSeconds when not running
+                totalSeconds += 60; // Add 60 seconds (1 minute)
+                currentSeconds = totalSeconds; // Sync currentSeconds with the new totalSeconds
                 updateDisplay();
             }
         });
         
-        // Subtract one minute
+        // Subtract one minute (adjusts totalSeconds and currentSeconds for next start/reset)
         minusBtn.addEventListener('click', () => {
-            if (!isRunning && currentSeconds > 60) {
-                currentSeconds -= 60; // Subtract 60 seconds (1 minute)
-                totalSeconds = currentSeconds; // Update total time
+            if (!isRunning) { // Only adjust totalSeconds when not running
+                if (totalSeconds >= 60) {
+                    totalSeconds -= 60; // Subtract 60 seconds (1 minute)
+                } else { // If totalSeconds is less than 60, set it to 0
+                    totalSeconds = 0;
+                }
+                currentSeconds = totalSeconds; // Sync currentSeconds with the new totalSeconds
                 updateDisplay();
             }
         });
