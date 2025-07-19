@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -642,18 +640,28 @@
                     
                     const currentEndMs = timeToMs(currentBlock.endTime);
                     const nextStartMs = timeToMs(nextBlock.startTime);
+                    const nextEndMs = timeToMs(nextBlock.endTime);
                     
                     // 計算時間間隔
                     const gap = nextStartMs - currentEndMs;
                     
                     if (gap > threshold) {
-                        // 修復間隔：將當前字幕的結束時間延長到下一個字幕的開始時間
-                        currentBlock.endTime = nextBlock.startTime;
+                        // 修復間隔：將下一個字幕的開始時間設為前一個字幕的結束時間
+                        nextBlock.startTime = currentBlock.endTime;
                         gapCount++;
                         totalGapTime += gap;
                     } else if (gap < 0) {
                         // 處理重疊情況：將下一個字幕的開始時間設為當前字幕的結束時間
+                        // 同時需要確保結束時間不會早於開始時間
                         nextBlock.startTime = currentBlock.endTime;
+                        
+                        // 如果調整後的開始時間晚於原本的結束時間，需要延長結束時間
+                        const newStartMs = timeToMs(nextBlock.startTime);
+                        if (newStartMs >= nextEndMs) {
+                            // 保持至少500毫秒的字幕顯示時間
+                            nextBlock.endTime = msToTime(newStartMs + 500);
+                        }
+                        
                         overlapCount++;
                     }
                 }
@@ -729,5 +737,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9618de59926e4a88',t:'MTc1MjkxMzk0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9618f072c50b8282',t:'MTc1MjkxNDY5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
