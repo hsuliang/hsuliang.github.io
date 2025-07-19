@@ -1,9 +1,11 @@
+
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ㄚ亮笑長字幕整理工具 V10</title>
+    <title>字幕整理工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -135,7 +137,7 @@
     <div class="container mx-auto px-4 max-w-5xl">
         <header class="text-center mb-10">
             <div class="gradient-bg inline-block px-6 py-3 rounded-2xl shadow-xl mb-4 transform hover:scale-105 transition-transform duration-300">
-                <h1 class="text-3xl md:text-4xl font-bold text-white">ㄚ亮笑長字幕整理工具 V10</h1>
+                <h1 class="text-3xl md:text-4xl font-bold text-white">字幕整理工具</h1>
             </div>
         </header>
 
@@ -177,6 +179,16 @@
                         <span class="checkbox-icon"></span>
                         <span class="text-gray-700">是否需要標點符號</span>
                     </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="fixTimestamp" checked>
+                        <span class="checkbox-icon"></span>
+                        <span class="text-gray-700">修復時間戳間隔</span>
+                    </label>
+                    <div class="flex items-center">
+                        <label class="text-gray-700 mr-2 font-medium">間隔閾值(毫秒):</label>
+                        <input type="number" id="gapThreshold" value="100" min="0" max="1000" 
+                            class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300">
+                    </div>
                 </div>
                 <button id="processBtn" class="btn-primary text-white font-medium py-3 px-6 rounded-lg shadow-lg flex items-center">
                     <i class="fas fa-cogs mr-2"></i>
@@ -210,6 +222,8 @@
             </div>
         </div>
 
+
+
         <!-- 說明區域 -->
         <div class="card p-6">
             <h2 class="text-xl font-semibold mb-4 text-indigo-700 flex items-center">
@@ -217,16 +231,16 @@
                 使用說明
             </h2>
             <ul class="list-disc pl-5 space-y-2 text-gray-700">
-                <li>上傳 SRT 檔案或直接貼上 SRT 內容</li>
-                <li>設定每行最大字數限制（預設為 27 個中文字）</li>
-                <li>選擇是否保留標點符號（若取消勾選，將移除所有標點符號）</li>
-                <li>點擊「處理字幕」按鈕進行處理</li>
-                <li>處理後的結果會自動將超過字數限制的字幕分行，並重新分配時間碼</li>
-                <li>單字字幕會併入下一行，使字幕更加平衡</li>
-                <li>每行第一個字不會是標點符號</li>
-                <li>英文單字不會被切分，確保完整性</li>
-                <li>可以複製結果或下載為 SRT 檔案</li>
-                <li>V10</li>
+                <li><strong>字幕整理功能：</strong></li>
+                <li class="ml-4">上傳 SRT 檔案或直接貼上 SRT 內容</li>
+                <li class="ml-4">設定每行最大字數限制（預設為 27 個中文字）</li>
+                <li class="ml-4">選擇是否保留標點符號（若取消勾選，將移除所有標點符號）</li>
+                <li class="ml-4">選擇是否修復時間戳間隔（自動修復字幕間的時間空隙和重疊）</li>
+                <li class="ml-4">可設定間隔閾值（預設100毫秒），超過此值的間隔將被修復</li>
+                <li class="ml-4">處理後的結果會自動將超過字數限制的字幕分行，並重新分配時間碼</li>
+                <li class="ml-4">單字字幕會併入下一行，每行第一個字不會是標點符號</li>
+                <li class="ml-4">英文單字不會被切分，確保完整性</li>
+                <li class="ml-4">修復完成後會顯示詳細的修復報告，包括修復的間隔數量和重疊數量</li>
             </ul>
         </div>
     </div>
@@ -237,7 +251,7 @@
             <span>ㄚ亮笑長練功坊</span>
             <i class="fas fa-external-link-alt ml-1 text-xs"></i>
         </a>
-        <p class="mt-1">© 2025.06</p>
+        <p class="mt-1">© 2023</p>
     </footer>
 
     <script>
@@ -247,10 +261,14 @@
             const inputText = document.getElementById('inputText');
             const charLimit = document.getElementById('charLimit');
             const keepPunctuation = document.getElementById('keepPunctuation');
+            const fixTimestamp = document.getElementById('fixTimestamp');
+            const gapThreshold = document.getElementById('gapThreshold');
             const processBtn = document.getElementById('processBtn');
             const outputText = document.getElementById('outputText');
             const copyBtn = document.getElementById('copyBtn');
             const downloadBtn = document.getElementById('downloadBtn');
+            
+
             
             // 儲存原始檔名
             let originalFileName = "subtitle";
@@ -286,7 +304,8 @@
                 }
 
                 try {
-                    const processedSrt = processSrt(srtContent, limit, keepPunctuation.checked);
+                    const threshold = parseInt(gapThreshold.value) || 100;
+                    const processedSrt = processSrt(srtContent, limit, keepPunctuation.checked, fixTimestamp.checked, threshold);
                     outputText.value = processedSrt;
                     showNotification('字幕處理完成！', 'success');
                 } catch (error) {
@@ -342,6 +361,8 @@
                 }, 100);
             });
 
+
+
             // 顯示通知
             function showNotification(message, type) {
                 // 創建通知元素
@@ -375,7 +396,7 @@
             }
 
             // 處理 SRT 內容的主要函數
-            function processSrt(srtContent, charLimit, keepPunctuation) {
+            function processSrt(srtContent, charLimit, keepPunctuation, fixTimestamp, gapThreshold = 100) {
                 // 分割成字幕塊
                 const blocks = srtContent.split(/\r?\n\r?\n/).filter(block => block.trim() !== '');
                 
@@ -433,6 +454,11 @@
                 
                 // 過濾掉已合併的塊
                 parsedBlocks = parsedBlocks.filter(block => !block.merged);
+                
+                // 修復時間戳間隔（如果啟用）
+                if (fixTimestamp) {
+                    parsedBlocks = fixTimestampGaps(parsedBlocks, gapThreshold);
+                }
                 
                 // 重新處理字幕塊，分割超過字數限制的塊
                 let processedBlocks = [];
@@ -601,6 +627,58 @@
                 return num.toString().padStart(length, '0');
             }
 
+            // 修復時間戳間隔的函數
+            function fixTimestampGaps(blocks, threshold = 100) {
+                if (blocks.length <= 1) return blocks;
+                
+                const fixedBlocks = [...blocks];
+                let gapCount = 0;
+                let overlapCount = 0;
+                let totalGapTime = 0;
+                
+                for (let i = 0; i < fixedBlocks.length - 1; i++) {
+                    const currentBlock = fixedBlocks[i];
+                    const nextBlock = fixedBlocks[i + 1];
+                    
+                    const currentEndMs = timeToMs(currentBlock.endTime);
+                    const nextStartMs = timeToMs(nextBlock.startTime);
+                    
+                    // 計算時間間隔
+                    const gap = nextStartMs - currentEndMs;
+                    
+                    if (gap > threshold) {
+                        // 修復間隔：將當前字幕的結束時間延長到下一個字幕的開始時間
+                        currentBlock.endTime = nextBlock.startTime;
+                        gapCount++;
+                        totalGapTime += gap;
+                    } else if (gap < 0) {
+                        // 處理重疊情況：將下一個字幕的開始時間設為當前字幕的結束時間
+                        nextBlock.startTime = currentBlock.endTime;
+                        overlapCount++;
+                    }
+                }
+                
+                // 顯示詳細的修復報告
+                if (gapCount > 0 || overlapCount > 0) {
+                    setTimeout(() => {
+                        let message = '';
+                        if (gapCount > 0) {
+                            const avgGap = Math.round(totalGapTime / gapCount);
+                            message += `修復了 ${gapCount} 個時間間隔（平均間隔: ${avgGap}ms）`;
+                        }
+                        if (overlapCount > 0) {
+                            if (message) message += '，';
+                            message += `修復了 ${overlapCount} 個時間重疊`;
+                        }
+                        showNotification(message, 'success');
+                    }, 500);
+                }
+                
+                return fixedBlocks;
+            }
+
+
+
             // 拖放功能
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
                 document.body.addEventListener(eventName, preventDefaults, false);
@@ -651,5 +729,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9527e29c44e6a361',t:'MTc1MDM4NzA1Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9618de59926e4a88',t:'MTc1MjkxMzk0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
