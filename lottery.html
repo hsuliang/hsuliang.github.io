@@ -28,6 +28,8 @@
             --danger-color: #f56565;
             --tag-bg: rgba(74, 85, 104, 0.5);
             --footer-bg: rgba(26, 26, 26, 0.8);
+            --claimed-bg: #ffab00;
+            --claimed-text: #1a1a1a;
         }
         body.theme-sakura {
             --bg-color: #fdf2f8;
@@ -47,6 +49,8 @@
             --danger-color: #be185d;
             --tag-bg: rgba(243, 232, 255, 0.8);
             --footer-bg: rgba(253, 242, 248, 0.8);
+            --claimed-bg: #facc15;
+            --claimed-text: #581c87;
         }
         body.theme-midnight {
             --bg-color: #0f172a;
@@ -66,6 +70,8 @@
             --danger-color: #fb7185;
             --tag-bg: rgba(51, 65, 85, 0.8);
             --footer-bg: rgba(15, 23, 42, 0.8);
+            --claimed-bg: #facc15;
+            --claimed-text: #0f172a;
         }
 
         body {
@@ -148,8 +154,8 @@
             transform: scale(1);
         }
         .theme-button {
-            width: 40px;
-            height: 40px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             cursor: pointer;
             border: 2px solid transparent;
@@ -160,14 +166,31 @@
             transform: scale(1.1);
             box-shadow: 0 0 10px var(--accent-color);
         }
+        .winner-tag {
+             background-color: var(--tag-bg);
+        }
+        .winner-tag.claimed {
+            background-color: var(--claimed-bg);
+            color: var(--claimed-text);
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4 pb-16">
 
     <div class="w-full max-w-5xl mx-auto">
         <!-- Header -->
-        <header class="text-center mb-8">
+        <header class="relative text-center mb-8">
             <h1 class="text-5xl md:text-6xl font-bold izakaya-title">居久屋微醺夜摸彩機</h1>
+            <div id="theme-popover-container" class="absolute top-1/2 -translate-y-1/2 right-0">
+                <button id="theme-toggle-btn" class="text-3xl p-2 rounded-full transition-colors duration-300 hover:bg-white/10" aria-label="選擇主題">
+                    ⚙️
+                </button>
+                <div id="theme-selector-popover" class="hidden absolute top-full right-0 mt-2 card p-3 rounded-lg shadow-lg z-50">
+                    <div id="theme-selector" class="flex justify-center gap-3">
+                    </div>
+                </div>
+            </div>
         </header>
 
         <!-- Settings Section -->
@@ -201,23 +224,16 @@
                     </div>
                     <button id="add-prize-btn" class="mt-4 w-full btn-secondary py-2 rounded-lg text-lg font-bold">＋ 新增獎項</button>
                 </div>
-                
-                <hr style="border-color: var(--input-border-color);">
-
-                <div>
-                    <h2 class="text-2xl font-bold mb-4" style="color: var(--accent-color);">布景主題選擇</h2>
-                    <div id="theme-selector" class="flex justify-center gap-4">
-                    </div>
-                </div>
             </div>
 
-            <button id="load-button" class="mt-8 btn-primary w-full py-3 rounded-lg text-xl font-bold">載入名單並開始</button>
-            
-            <div class="mt-4">
-                <button id="generate-link-btn" class="w-full btn-secondary py-2 rounded-lg text-lg">產生獨立摸彩連結</button>
+            <div class="mt-8 space-y-4">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <button id="generate-link-btn" class="w-full md:w-1/2 btn-secondary py-3 rounded-lg text-xl font-bold">產生獨立摸彩連結</button>
+                    <button id="load-button" class="w-full md:w-1/2 btn-primary py-3 rounded-lg text-xl font-bold">載入名單並開始</button>
+                </div>
                 <div id="link-output-container" class="hidden mt-2 flex gap-2">
                     <input type="text" id="share-link-output" class="form-input w-full p-2 rounded" readonly>
-                    <button id="copy-link-btn" class="btn-primary px-4 rounded">複製</button>
+                    <button id="copy-link-btn" class="btn-primary px-4 py-2 text-xl rounded" aria-label="複製連結">📋</button>
                 </div>
             </div>
 
@@ -241,7 +257,7 @@
                     <h3 class="text-xl font-bold text-center mb-4" style="color: var(--accent-color);">🎉 得獎名單 🎉</h3>
                     <div id="winners-list" class="space-y-4 text-center text-lg">
                     </div>
-                    <button id="export-csv-btn" class="hidden mt-4 btn-secondary w-full py-3 rounded-lg text-xl font-bold">匯出得獎名單 (CSV)</button>
+                    <button id="export-csv-btn" class="hidden mt-4 btn-secondary w-full py-3 rounded-lg text-xl font-bold">匯出得獎名單</button>
                 </div>
             </div>
         </section>
@@ -254,6 +270,88 @@
             <button id="close-modal-btn" class="absolute top-2 right-3 hover:text-white text-3xl leading-none font-bold" style="color: var(--text-muted-color);">&times;</button>
             <h3 class="text-xl font-bold text-center mb-4" style="color: var(--accent-color);">版本更新紀錄</h3>
             <ul class="space-y-4 max-h-[60vh] overflow-y-auto pr-4" style="color: var(--text-color);">
+                <li>
+                    <strong style="color: var(--accent-color);">v1.9.1 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正得獎者標記功能，確保點擊後底色能正確變為黃色。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.9.0 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>新增得獎名單點擊功能，點擊得獎者可標記為黃底，表示已領獎。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.8.9 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>將「匯出得獎名單 (CSV)」按鈕文字改為「匯出得獎名單」。</li>
+                        <li>匯出的 CSV 檔名加入西元年月日。</li>
+                    </ul>
+                </li>
+                 <li>
+                    <strong style="color: var(--accent-color);">v1.8.8 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正「重置」功能未清空名單設定欄位的問題。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.8.7 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>新增抽獎結束後的「再接再厲」與「重置」流程。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.8.6 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>新增「抽獎結束」後點擊按鈕可返回初始設定畫面的功能。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.8.5 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>將「複製」按鈕文字改為圖示 📋，提升介面簡潔性。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.8.4 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>將主題選擇圖示再縮小 50%，使其更加精巧。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.8.3 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>採用更強制的圖層級別設定，徹底解決主題選擇器彈出視窗的重疊問題。</li>
+                        <li>再次縮小主題選擇按鈕，使彈出視窗更精緻。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.8.2 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>再次修正主題選擇器彈出視窗的重疊問題。</li>
+                        <li>依建議縮小主題選擇按鈕，使彈出視窗更精緻。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.8.1 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正主題選擇器彈出視窗與設定卡片重疊的問題。</li>
+                        <li>將主題選擇圖示更換為「⚙️」。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.8.0 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>將布景主題選擇器移至標題右側，改為圖示觸發的彈出式選單，簡化設定介面。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.7.4 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>調整設定頁面主要操作按鈕為左右並列，優化版面配置。</li>
+                    </ul>
+                </li>
                 <li>
                     <strong style="color: var(--accent-color);">v1.7.3 (2025-09-30)</strong>
                     <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
@@ -376,7 +474,7 @@
     </div>
     
     <footer class="fixed bottom-0 left-0 right-0 p-3 text-center text-xs backdrop-blur-sm" style="color: var(--text-muted-color); background-color: var(--footer-bg);">
-        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v1.7.3</span> |
+        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v1.9.1</span> |
         <span>由 Google Gemini 強力驅動</span> |
         <a href="https://bit.ly/Alaing" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">丫亮校長練功坊</a>
     </footer>
@@ -409,6 +507,10 @@
             const linkOutputContainer = document.getElementById('link-output-container');
             const shareLinkOutput = document.getElementById('share-link-output');
             const copyLinkBtn = document.getElementById('copy-link-btn');
+            const themeToggleBtn = document.getElementById('theme-toggle-btn');
+            const themePopoverContainer = document.getElementById('theme-popover-container');
+            const themeSelectorPopover = document.getElementById('theme-selector-popover');
+
 
             // State
             let participants = [];
@@ -433,6 +535,16 @@
                 generateLinkBtn.addEventListener('click', generateShareLink);
                 copyLinkBtn.addEventListener('click', copyShareLink);
                 exportCsvBtn.addEventListener('click', exportResultsToCsv);
+
+                themeToggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    themeSelectorPopover.classList.toggle('hidden');
+                });
+                document.addEventListener('click', (e) => {
+                    if (!themePopoverContainer.contains(e.target)) {
+                        themeSelectorPopover.classList.add('hidden');
+                    }
+                });
 
                 addPrizeRow('三獎', 3);
                 addPrizeRow('二獎', 2);
@@ -476,7 +588,7 @@
                     const name = row.querySelector('.prize-name').value.trim();
                     const quantity = parseInt(row.querySelector('.prize-quantity').value, 10);
                     if (!name) { updateStatus('獎項名稱不可為空！', true); return false; }
-                    if (isNaN(quantity) || quantity < 1) { updateStatus(`獎項「${name}」的數量必須是正整數！`, true); return false; }
+                    if (isNaN(quantity) || quantity < 1) { updateStatus(`獎項「${name}」の數量必須是正整數！`, true); return false; }
                     prizes.push({ name, quantity, winners: [] });
                     totalPrizeQuantity += quantity;
                 }
@@ -527,6 +639,18 @@
             };
 
             const handleDrawWinner = () => {
+                if (drawButton.textContent === '重置') {
+                    resetApp();
+                    return;
+                }
+
+                if (drawButton.textContent === '抽獎結束') {
+                    winnerDisplay.textContent = '再接再厲';
+                    currentPrizeDisplay.textContent = '感謝參與！';
+                    drawButton.textContent = '重置';
+                    return;
+                }
+
                 if (participants.length === 0) {
                     winnerDisplay.textContent = '所有人都已中獎！';
                     drawButton.disabled = true; return;
@@ -567,7 +691,10 @@
                     button.title = theme.name;
                     button.dataset.theme = theme.id;
                     button.style.background = `linear-gradient(45deg, ${theme.colors[0]}, ${theme.colors[1]})`;
-                    button.addEventListener('click', () => applyTheme(theme.id));
+                    button.addEventListener('click', () => {
+                        applyTheme(theme.id);
+                        themeSelectorPopover.classList.add('hidden');
+                    });
                     themeSelector.appendChild(button);
                 });
             };
@@ -609,7 +736,7 @@
                  if (currentPrizeIndex >= prizes.length) {
                     currentPrizeDisplay.textContent = '所有獎項已抽完！';
                     drawButton.textContent = '抽獎結束';
-                    drawButton.disabled = true;
+                    drawButton.disabled = false;
                     exportCsvBtn.classList.remove('hidden');
                     return;
                 }
@@ -621,7 +748,7 @@
                     const nextPrize = prizes[currentPrizeIndex + 1];
                     drawButton.textContent = nextPrize ? `繼續抽「${nextPrize.name}」` : '抽獎結束';
                     if (!nextPrize) {
-                       drawButton.disabled = true;
+                       drawButton.disabled = false;
                        exportCsvBtn.classList.remove('hidden');
                     }
                 } else {
@@ -654,8 +781,12 @@
                         prize.winners.forEach(winner => {
                              const winnerTag = document.createElement('div');
                              winnerTag.textContent = winner;
-                             winnerTag.className = 'px-2 py-1 rounded-md truncate';
-                             winnerTag.style.backgroundColor = 'var(--tag-bg)';
+                             winnerTag.className = 'winner-tag px-2 py-1 rounded-md truncate cursor-pointer transition-colors';
+                             
+                             winnerTag.addEventListener('click', (e) => {
+                                e.currentTarget.classList.toggle('claimed');
+                             });
+
                              winnerNames.appendChild(winnerTag);
                         });
                         prizeContainer.appendChild(winnerNames);
@@ -682,21 +813,19 @@
             };
 
             const copyShareLink = () => {
-                // Use the older document.execCommand for better compatibility, especially in iFrames
                 shareLinkOutput.select();
-                shareLinkOutput.setSelectionRange(0, 99999); // For mobile devices
+                shareLinkOutput.setSelectionRange(0, 99999); 
 
                 try {
                     document.execCommand('copy');
-                    copyLinkBtn.textContent = '已複製!';
-                    setTimeout(() => { copyLinkBtn.textContent = '複製'; }, 2000);
+                    copyLinkBtn.innerHTML = '✅';
+                    setTimeout(() => { copyLinkBtn.innerHTML = '📋'; }, 2000);
                 } catch (err) {
                     console.error('複製失敗: ', err);
-                    copyLinkBtn.textContent = '失敗';
-                     setTimeout(() => { copyLinkBtn.textContent = '複製'; }, 2000);
+                    copyLinkBtn.innerHTML = '❌';
+                     setTimeout(() => { copyLinkBtn.innerHTML = '📋'; }, 2000);
                 }
 
-                // Deselect the text after copying
                 window.getSelection().removeAllRanges();
             };
             
@@ -714,11 +843,59 @@
                 const link = document.createElement("a");
                 const url = URL.createObjectURL(blob);
                 link.setAttribute("href", url);
-                link.setAttribute("download", "居久屋微醺夜摸彩機-得獎名單.csv");
+
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                const dateString = `${yyyy}${mm}${dd}`;
+                const fileName = `居久屋微醺夜摸彩機-得獎名單-${dateString}.csv`;
+                
+                link.setAttribute("download", fileName);
                 link.style.visibility = 'hidden';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+            };
+
+            const resetApp = () => {
+                // Hide lottery section, show settings section
+                settingsSection.classList.remove('hidden');
+                lotterySection.classList.add('hidden');
+
+                // Reset state
+                participants = [];
+                prizes = [];
+                currentPrizeIndex = 0;
+
+                // Reset lottery UI
+                winnerDisplay.textContent = '準備開始！';
+                winnerDisplay.classList.remove('winner-reveal');
+                winnersList.innerHTML = '';
+                winnersListContainer.classList.add('hidden');
+                mainDrawPanel.classList.remove('md:w-[70%]');
+                mainDrawPanel.classList.add('md:w-full');
+                exportCsvBtn.classList.add('hidden');
+                participantCountSpan.textContent = '0';
+                currentPrizeDisplay.textContent = '';
+                
+                // Reset draw button state
+                drawButton.textContent = '開始摸彩';
+                drawButton.disabled = false;
+
+                // Reset settings UI
+                sheetUrlInput.value = '';
+                sheetNameInput.value = '工作表1';
+                columnLetterInput.value = 'A';
+                prizesContainer.innerHTML = '';
+                addPrizeRow('三獎', 3);
+                addPrizeRow('二獎', 2);
+                addPrizeRow('頭獎', 1);
+                
+                loadButton.disabled = false;
+                updateStatus('');
+                linkOutputContainer.classList.add('hidden');
+                shareLinkOutput.value = '';
             };
 
             const launchConfetti = () => {
