@@ -9,7 +9,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.min.js"></script>
     <style>
         :root {
             --bg-color: #1a1a1a;
@@ -185,7 +184,7 @@
         }
     </style>
 </head>
-<body class="p-4 pb-16">
+<body class="flex justify-center min-h-screen p-4 pb-20">
 
     <div class="w-full max-w-5xl mx-auto">
         <!-- Header -->
@@ -322,6 +321,9 @@
         </section>
         
     </div>
+     <!-- Audio Elements -->
+    <audio id="rolling-sound" src="https://hsuliang.github.io/rool5.mp3" preload="auto" loop></audio>
+    <audio id="winner-sound" src="https://hsuliang.github.io/happy.mp3" preload="auto"></audio>
 
     <!-- Version History Modal -->
     <div id="version-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out opacity-0 pointer-events-none">
@@ -329,6 +331,37 @@
             <button id="close-modal-btn" class="absolute top-2 right-3 hover:text-white text-3xl leading-none font-bold" style="color: var(--text-muted-color);">&times;</button>
             <h3 class="text-xl font-bold text-center mb-4" style="color: var(--accent-color);">版本更新紀錄</h3>
             <ul class="space-y-4 max-h-[60vh] overflow-y-auto pr-4" style="color: var(--text-color);">
+                <li>
+                    <strong style="color: var(--accent-color);">v2.2.7 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正版面配置，確保內容不會與頁腳重疊。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.2.6 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>更換為使用者提供的音效檔連結。</li>
+                        <li>優化讀取失敗時的錯誤訊息提示，增加快取延遲的可能性說明。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.2.5 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>將音效檔來源更換為更穩定的 archive.org，以解決 'no supported sources' 錯誤。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.2.4 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正抽獎按鈕與頁腳重疊的排版問題。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.2.3 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>將音效系統從 Tone.js 更換為直接使用音效檔，提升穩定性與相容性。</li>
+                    </ul>
+                </li>
                 <li>
                     <strong style="color: var(--accent-color);">v2.2.2 (2025-09-30)</strong>
                     <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
@@ -598,7 +631,7 @@
     </div>
     
     <footer class="fixed bottom-0 left-0 right-0 p-3 text-center text-xs backdrop-blur-sm" style="color: var(--text-muted-color); background-color: var(--footer-bg);">
-        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v2.2.2</span> |
+        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v2.2.6</span> |
         <span>由 Google Gemini 強力驅動</span> |
         <a href="https://bit.ly/Alaing" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">丫亮校長練功坊</a>
     </footer>
@@ -645,6 +678,8 @@
             const tabContentTitle = document.getElementById('tab-content-title');
             const tabContentTheme = document.getElementById('tab-content-theme');
             const tabContentSound = document.getElementById('tab-content-sound');
+            const rollingSound = document.getElementById('rolling-sound');
+            const winnerSound = document.getElementById('winner-sound');
 
 
             // State
@@ -653,33 +688,13 @@
             let currentPrizeIndex = 0;
             let rollingInterval = null;
             let activeDataSource = 'cloud';
-            let audioInitialized = false;
             let isSoundOn = true;
             const themes = [
                 { id: 'izakaya', name: '居酒屋', colors: ['#e53e3e', '#ffab00'] },
                 { id: 'sakura', name: '櫻花', colors: ['#db2777', '#fdf2f8'] },
                 { id: 'midnight', name: '午夜', colors: ['#38bdf8', '#0f172a'] }
             ];
-
-            // Audio Synths
-            let tenseSynth, tensePattern, winnerSynth;
             
-            const initAudioOnFirstInteraction = async () => {
-                if (typeof Tone !== 'undefined' && !audioInitialized) {
-                    try {
-                        await Tone.start();
-                        setupAudio();
-                        console.log("Audio context started successfully on user interaction.");
-                    } catch (e) {
-                        console.error("Audio context could not be started on user interaction.", e);
-                    } finally {
-                        // Clean up the event listeners so this only runs once
-                        document.removeEventListener('click', initAudioOnFirstInteraction);
-                        document.removeEventListener('touchend', initAudioOnFirstInteraction);
-                    }
-                }
-            };
-
             const init = () => {
                 addPrizeBtn.addEventListener('click', () => addPrizeRow());
                 loadButton.addEventListener('click', handleLoadData);
@@ -706,10 +721,6 @@
                     mainTitle.textContent = newTitle || '居久屋微醺夜摸彩機';
                     document.title = newTitle || '居久屋微醺夜摸彩機';
                 });
-                
-                document.addEventListener('click', initAudioOnFirstInteraction);
-                document.addEventListener('touchend', initAudioOnFirstInteraction);
-
 
                 addPrizeRow('三獎', 3);
                 addPrizeRow('二獎', 2);
@@ -727,40 +738,27 @@
                 });
             };
             
-            const setupAudio = () => {
-                if (typeof Tone === 'undefined') {
-                    console.error("Tone.js is not loaded.");
-                    return;
-                }
-                tenseSynth = new Tone.Synth().toDestination();
-                tensePattern = new Tone.Pattern((time, note) => {
-                    tenseSynth.triggerAttackRelease(note, "16n", time);
-                }, ["C5", "D#5", "G5", "D#5"], "randomWalk");
-                tensePattern.interval = "16n";
-
-                winnerSynth = new Tone.NoiseSynth({
-                    noise: { type: 'white' },
-                    envelope: { attack: 0.005, decay: 0.1, sustain: 0 }
-                }).toDestination();
-                audioInitialized = true;
-            };
-
             const playTenseMusic = () => {
-                if (!isSoundOn || !audioInitialized) return;
-                Tone.Transport.stop();
-                Tone.Transport.start();
-                tensePattern.start(0);
+                if (!isSoundOn) return;
+                rollingSound.currentTime = 0;
+                const playPromise = rollingSound.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => console.error("Error playing rolling sound:", error));
+                }
             };
 
             const stopTenseMusic = () => {
-                if (!isSoundOn || !tensePattern) return;
-                tensePattern.stop();
-                Tone.Transport.stop();
+                rollingSound.pause();
+                rollingSound.currentTime = 0;
             };
 
             const playWinnerSound = () => {
-                if (!isSoundOn || !audioInitialized) return;
-                winnerSynth.triggerAttackRelease("8n");
+                if (!isSoundOn) return;
+                winnerSound.currentTime = 0;
+                const playPromise = winnerSound.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => console.error("Error playing winner sound:", error));
+                }
             };
             
             const toggleSound = () => {
@@ -897,7 +895,7 @@
                     }
                 } catch (error) {
                     console.error('讀取試算表時發生錯誤:', error);
-                    updateStatus('讀取失敗！請檢查：1. 網址是否正確 2. 試算表是否已設為「知道連結的任何人皆可檢視」。', true);
+                    updateStatus('讀取失敗！請檢查：1. 網址是否正確 2. 試算表共用權限是否為「知道連結的任何人皆可檢視」 3. 若權限剛修改，請稍候再試。', true);
                     loadButton.disabled = false;
                 }
             };
