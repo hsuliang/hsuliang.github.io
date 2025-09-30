@@ -164,7 +164,7 @@
 </head>
 <body class="flex items-center justify-center min-h-screen p-4 pb-16">
 
-    <div class="w-full max-w-2xl mx-auto">
+    <div class="w-full max-w-5xl mx-auto">
         <!-- Header -->
         <header class="text-center mb-8">
             <h1 class="text-5xl md:text-6xl font-bold izakaya-title">居久屋微醺夜摸彩機</h1>
@@ -225,8 +225,8 @@
         </section>
 
         <!-- Lottery Section -->
-        <section id="lottery-section" class="hidden">
-            <div class="card p-8 rounded-lg">
+        <section id="lottery-section" class="hidden flex flex-col md:flex-row gap-6 items-start">
+            <div id="main-draw-panel" class="w-full md:w-full card p-8 rounded-lg">
                  <div class="flex flex-col sm:flex-row justify-end items-center mb-4 gap-2">
                      <p>剩餘摸彩人數: <span id="participant-count" class="font-bold text-2xl" style="color: var(--accent-color);">0</span></p>
                 </div>
@@ -236,7 +236,7 @@
                 </div>
                 <button id="draw-button" class="btn-primary w-full py-4 rounded-lg text-2xl font-bold">開始摸彩</button>
             </div>
-             <div id="winners-list-container" class="mt-6 hidden">
+             <div id="winners-list-container" class="w-full md:w-[30%] hidden">
                 <div class="card p-6 rounded-lg">
                     <h3 class="text-xl font-bold text-center mb-4" style="color: var(--accent-color);">🎉 得獎名單 🎉</h3>
                     <div id="winners-list" class="space-y-4 text-center text-lg">
@@ -254,6 +254,31 @@
             <button id="close-modal-btn" class="absolute top-2 right-3 hover:text-white text-3xl leading-none font-bold" style="color: var(--text-muted-color);">&times;</button>
             <h3 class="text-xl font-bold text-center mb-4" style="color: var(--accent-color);">版本更新紀錄</h3>
             <ul class="space-y-4 max-h-[60vh] overflow-y-auto pr-4" style="color: var(--text-color);">
+                <li>
+                    <strong style="color: var(--accent-color);">v1.7.2 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正因程式碼不完整造成的 'SyntaxError: Unexpected end of input' 錯誤。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.7.1 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正抽獎頁面右側的得獎名單區塊會預先出現空白樣式的問題。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.7.0 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>調整抽獎頁面佈局，改為左側抽獎區塊(70%)、右側得獎名單(30%)的左右結構。</li>
+                        <li>加大整體頁面最大寬度以適應新佈局。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.6.5 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>在讀取試算表資料時加入時間戳記，避免因 Google 快取延遲導致權限設定無法立即生效的問題。</li>
+                    </ul>
+                </li>
                 <li>
                     <strong style="color: var(--accent-color);">v1.6.4 (2025-09-30)</strong>
                     <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
@@ -345,7 +370,7 @@
     </div>
     
     <footer class="fixed bottom-0 left-0 right-0 p-3 text-center text-xs backdrop-blur-sm" style="color: var(--text-muted-color); background-color: var(--footer-bg);">
-        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v1.6.4</span> |
+        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v1.7.2</span> |
         <span>由 Google Gemini 強力驅動</span> |
         <a href="https://bit.ly/Alaing" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">丫亮校長練功坊</a>
     </footer>
@@ -369,6 +394,7 @@
             const currentPrizeDisplay = document.getElementById('current-prize-display');
             const winnerDisplay = document.getElementById('winner-display');
             const winnersListContainer = document.getElementById('winners-list-container');
+            const mainDrawPanel = document.getElementById('main-draw-panel');
             const winnersList = document.getElementById('winners-list');
             const versionBtn = document.getElementById('version-btn');
             const versionModal = document.getElementById('version-modal');
@@ -465,7 +491,9 @@
                 updateStatus('正在從雲端讀取名單...');
                 loadButton.disabled = true;
                 try {
-                    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+                    // Append a timestamp to bypass Google's cache
+                    const timestamp = new Date().getTime();
+                    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&_=${timestamp}`;
                     const response = await fetch(csvUrl);
                     if (!response.ok) throw new Error(`網路回應錯誤: ${response.statusText}`);
                     const csvText = await response.text();
@@ -563,6 +591,10 @@
             const switchToLotteryView = () => {
                 settingsSection.classList.add('hidden');
                 lotterySection.classList.remove('hidden');
+                // Initially, the main panel takes full width and winners list is hidden
+                mainDrawPanel.classList.remove('md:w-[70%]');
+                mainDrawPanel.classList.add('md:w-full');
+                winnersListContainer.classList.add('hidden');
                 updateParticipantCount();
                 updatePrizeDisplay();
             };
@@ -594,7 +626,16 @@
             const updateParticipantCount = () => participantCountSpan.textContent = participants.length;
 
             const updateWinnersList = () => {
-                winnersListContainer.classList.remove('hidden');
+                const hasAnyWinners = prizes.some(p => p.winners.length > 0);
+
+                if (hasAnyWinners) {
+                    winnersListContainer.classList.remove('hidden');
+                    mainDrawPanel.classList.remove('md:w-full');
+                    mainDrawPanel.classList.add('md:w-[70%]');
+                } else {
+                    return; // Don't show or update the list if there are no winners yet
+                }
+
                 winnersList.innerHTML = '';
                 prizes.forEach(prize => {
                     if (prize.winners.length > 0) {
