@@ -185,7 +185,7 @@
         }
     </style>
 </head>
-<body class="flex items-start justify-center min-h-screen p-4 pb-16">
+<body class="p-4 pb-16">
 
     <div class="w-full max-w-5xl mx-auto">
         <!-- Header -->
@@ -329,6 +329,18 @@
             <button id="close-modal-btn" class="absolute top-2 right-3 hover:text-white text-3xl leading-none font-bold" style="color: var(--text-muted-color);">&times;</button>
             <h3 class="text-xl font-bold text-center mb-4" style="color: var(--accent-color);">版本更新紀錄</h3>
             <ul class="space-y-4 max-h-[60vh] overflow-y-auto pr-4" style="color: var(--text-color);">
+                <li>
+                    <strong style="color: var(--accent-color);">v2.2.2 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正版面配置，移除 body 的 flex 垂直置中，徹底解決標題與設定區塊重疊的問題。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.2.1 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>採用更可靠的音效啟動機制，在首次點擊頁面時預先載入，確保音效能正常播放。</li>
+                    </ul>
+                </li>
                 <li>
                     <strong style="color: var(--accent-color);">v2.2.0 (2025-09-30)</strong>
                     <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
@@ -586,7 +598,7 @@
     </div>
     
     <footer class="fixed bottom-0 left-0 right-0 p-3 text-center text-xs backdrop-blur-sm" style="color: var(--text-muted-color); background-color: var(--footer-bg);">
-        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v2.2.0</span> |
+        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v2.2.2</span> |
         <span>由 Google Gemini 強力驅動</span> |
         <a href="https://bit.ly/Alaing" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">丫亮校長練功坊</a>
     </footer>
@@ -651,6 +663,22 @@
 
             // Audio Synths
             let tenseSynth, tensePattern, winnerSynth;
+            
+            const initAudioOnFirstInteraction = async () => {
+                if (typeof Tone !== 'undefined' && !audioInitialized) {
+                    try {
+                        await Tone.start();
+                        setupAudio();
+                        console.log("Audio context started successfully on user interaction.");
+                    } catch (e) {
+                        console.error("Audio context could not be started on user interaction.", e);
+                    } finally {
+                        // Clean up the event listeners so this only runs once
+                        document.removeEventListener('click', initAudioOnFirstInteraction);
+                        document.removeEventListener('touchend', initAudioOnFirstInteraction);
+                    }
+                }
+            };
 
             const init = () => {
                 addPrizeBtn.addEventListener('click', () => addPrizeRow());
@@ -678,6 +706,10 @@
                     mainTitle.textContent = newTitle || '居久屋微醺夜摸彩機';
                     document.title = newTitle || '居久屋微醺夜摸彩機';
                 });
+                
+                document.addEventListener('click', initAudioOnFirstInteraction);
+                document.addEventListener('touchend', initAudioOnFirstInteraction);
+
 
                 addPrizeRow('三獎', 3);
                 addPrizeRow('二獎', 2);
@@ -816,15 +848,6 @@
             };
 
             const handleLoadData = async () => {
-                if (typeof Tone !== 'undefined' && !audioInitialized) {
-                    try {
-                        await Tone.start();
-                        setupAudio();
-                    } catch (e) {
-                        console.error("Audio context could not be started.", e);
-                    }
-                }
-
                 loadButton.disabled = true;
                 updateStatus('正在處理名單...');
 
