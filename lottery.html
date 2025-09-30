@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.min.js"></script>
     <style>
         :root {
             --bg-color: #1a1a1a;
@@ -170,9 +171,17 @@
              background-color: var(--tag-bg);
         }
         .winner-tag.claimed {
-            background-color: var(--claimed-bg);
-            color: var(--claimed-text);
+            background-color: var(--claimed-bg) !important;
+            color: var(--claimed-text) !important;
             font-weight: bold;
+        }
+        .tab-btn {
+            border-color: transparent;
+            color: var(--text-muted-color);
+        }
+        .tab-btn.active {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
         }
     </style>
 </head>
@@ -187,17 +196,30 @@
                     ⚙️
                 </button>
                 <div id="theme-selector-popover" class="hidden absolute top-full right-0 mt-2 card p-3 rounded-lg shadow-lg z-50">
-                    <div id="theme-selector" class="flex justify-center gap-3">
+                    <div id="theme-selector" class="flex items-center justify-center gap-3">
+                         <button id="sound-toggle-btn" class="text-2xl p-2 rounded-full transition-colors duration-300 hover:bg-white/10" aria-label="切換音效">🔊</button>
                     </div>
                 </div>
             </div>
         </header>
 
         <!-- Settings Section -->
-        <section id="settings-section" class="card p-8 rounded-lg mb-6">
-            <div class="space-y-6">
-                <div>
-                    <h2 class="text-2xl font-bold mb-4" style="color: var(--accent-color);">名單設定</h2>
+        <section id="settings-section" class="space-y-6">
+             <!-- List Setup Card -->
+            <div class="card p-8 rounded-lg">
+                 <h2 class="text-2xl font-bold mb-4" style="color: var(--accent-color);">名單設定</h2>
+                 <div class="border-b" style="border-color: var(--input-border-color);">
+                    <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                        <button id="tab-cloud" class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg">
+                            雲端名單
+                        </button>
+                        <button id="tab-custom" class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg">
+                            自訂名單
+                        </button>
+                    </nav>
+                </div>
+
+                <div id="tab-content-cloud" class="mt-6">
                     <div class="space-y-4">
                         <div>
                             <label for="sheet-url" class="block mb-1 font-semibold" style="color: var(--accent-color);">Google 試算表網址</label>
@@ -216,16 +238,24 @@
                     </div>
                 </div>
 
-                <hr style="border-color: var(--input-border-color);">
-
-                <div>
-                    <h2 class="text-2xl font-bold mb-4" style="color: var(--accent-color);">獎項設定</h2>
-                    <div id="prizes-container" class="space-y-3">
+                <div id="tab-content-custom" class="hidden mt-6">
+                     <div>
+                        <label for="custom-list" class="block mb-1 font-semibold" style="color: var(--accent-color);">參與人員名單</label>
+                        <textarea id="custom-list" rows="6" class="form-input w-full p-2 rounded" placeholder="請在此輸入名單..."></textarea>
+                        <p class="text-sm mt-2" style="color: var(--text-muted-color);">提示：一行一個名字，或用半形逗號「,」或半形空白隔開。</p>
                     </div>
-                    <button id="add-prize-btn" class="mt-4 w-full btn-secondary py-2 rounded-lg text-lg font-bold">＋ 新增獎項</button>
                 </div>
             </div>
+            
+            <!-- Prize Setup Card -->
+            <div class="card p-8 rounded-lg">
+                 <h2 class="text-2xl font-bold mb-4" style="color: var(--accent-color);">獎項設定</h2>
+                <div id="prizes-container" class="space-y-3">
+                </div>
+                <button id="add-prize-btn" class="mt-4 w-full btn-secondary py-2 rounded-lg text-lg font-bold">＋ 新增獎項</button>
+            </div>
 
+            <!-- Action Buttons -->
             <div class="mt-8 space-y-4">
                 <div class="flex flex-col md:flex-row gap-4">
                     <button id="generate-link-btn" class="w-full md:w-1/2 btn-secondary py-3 rounded-lg text-xl font-bold">產生獨立摸彩連結</button>
@@ -271,6 +301,33 @@
             <h3 class="text-xl font-bold text-center mb-4" style="color: var(--accent-color);">版本更新紀錄</h3>
             <ul class="space-y-4 max-h-[60vh] overflow-y-auto pr-4" style="color: var(--text-color);">
                 <li>
+                    <strong style="color: var(--accent-color);">v2.1.1 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正因音效函式庫載入延遲可能導致的程式錯誤。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.1.0 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>新增抽獎背景音效與得獎音效，提升活動氣氛。</li>
+                        <li>新增音效開關，可隨時靜音。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.0.1 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正自訂名單模式下，參與者計數不正確的問題。</li>
+                        <li>將「獎項已抽完」的提示訊息改為兩行顯示，並為獎項名稱加入字體大小自動縮放功能。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.0.0 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>**重大更新**：設定頁面結構重組，將「名單設定」與「獎項設定」拆分為獨立區塊。</li>
+                        <li>新增「自訂名單」功能，允許使用者透過文字輸入框直接貼上名單。</li>
+                    </ul>
+                </li>
+                 <li>
                     <strong style="color: var(--accent-color);">v1.9.1 (2025-09-30)</strong>
                     <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
                         <li>修正得獎者標記功能，確保點擊後底色能正確變為黃色。</li>
@@ -474,19 +531,20 @@
     </div>
     
     <footer class="fixed bottom-0 left-0 right-0 p-3 text-center text-xs backdrop-blur-sm" style="color: var(--text-muted-color); background-color: var(--footer-bg);">
-        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v1.9.1</span> |
+        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v2.1.1</span> |
         <span>由 Google Gemini 強力驅動</span> |
-        <a href="https://bit.ly/Alaing" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">丫亮校長練功坊</a>
+        <a href="https://bit.ly/Alaing" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">丫亮笑長練功坊</a>
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('load', () => {
             // DOM Elements
             const settingsSection = document.getElementById('settings-section');
             const lotterySection = document.getElementById('lottery-section');
             const sheetUrlInput = document.getElementById('sheet-url');
             const sheetNameInput = document.getElementById('sheet-name');
             const columnLetterInput = document.getElementById('column-letter');
+            const customListInput = document.getElementById('custom-list');
             const prizesContainer = document.getElementById('prizes-container');
             const addPrizeBtn = document.getElementById('add-prize-btn');
             const themeSelector = document.getElementById('theme-selector');
@@ -510,18 +568,28 @@
             const themeToggleBtn = document.getElementById('theme-toggle-btn');
             const themePopoverContainer = document.getElementById('theme-popover-container');
             const themeSelectorPopover = document.getElementById('theme-selector-popover');
-
+            const soundToggleBtn = document.getElementById('sound-toggle-btn');
+            const tabCloudBtn = document.getElementById('tab-cloud');
+            const tabCustomBtn = document.getElementById('tab-custom');
+            const tabContentCloud = document.getElementById('tab-content-cloud');
+            const tabContentCustom = document.getElementById('tab-content-custom');
 
             // State
             let participants = [];
             let prizes = [];
             let currentPrizeIndex = 0;
             let rollingInterval = null;
+            let activeDataSource = 'cloud';
+            let audioInitialized = false;
+            let isSoundOn = true;
             const themes = [
                 { id: 'izakaya', name: '居酒屋', colors: ['#e53e3e', '#ffab00'] },
                 { id: 'sakura', name: '櫻花', colors: ['#db2777', '#fdf2f8'] },
                 { id: 'midnight', name: '午夜', colors: ['#38bdf8', '#0f172a'] }
             ];
+
+            // Audio Synths
+            let tenseSynth, tensePattern, winnerSynth;
 
             const init = () => {
                 addPrizeBtn.addEventListener('click', () => addPrizeRow());
@@ -535,6 +603,7 @@
                 generateLinkBtn.addEventListener('click', generateShareLink);
                 copyLinkBtn.addEventListener('click', copyShareLink);
                 exportCsvBtn.addEventListener('click', exportResultsToCsv);
+                soundToggleBtn.addEventListener('click', toggleSound);
 
                 themeToggleBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -546,13 +615,81 @@
                     }
                 });
 
+                tabCloudBtn.addEventListener('click', () => switchTab('cloud'));
+                tabCustomBtn.addEventListener('click', () => switchTab('custom'));
+
+
                 addPrizeRow('三獎', 3);
                 addPrizeRow('二獎', 2);
                 addPrizeRow('頭獎', 1);
 
                 setupThemes();
                 loadTheme();
+                switchTab(activeDataSource);
                 handleUrlParams();
+                window.addEventListener('resize', () => {
+                    if (document.getElementById('finished-prize-name')) {
+                        adjustPrizeNameFontSize();
+                    }
+                });
+            };
+            
+            const setupAudio = () => {
+                if (typeof Tone === 'undefined') return;
+                tenseSynth = new Tone.Synth().toDestination();
+                tensePattern = new Tone.Pattern((time, note) => {
+                    tenseSynth.triggerAttackRelease(note, "16n", time);
+                }, ["C5", "D#5", "G5", "D#5"], "randomWalk");
+                tensePattern.interval = "16n";
+
+                winnerSynth = new Tone.NoiseSynth({
+                    noise: { type: 'white' },
+                    envelope: { attack: 0.005, decay: 0.1, sustain: 0 }
+                }).toDestination();
+                audioInitialized = true;
+            };
+
+            const playTenseMusic = () => {
+                if (!isSoundOn || !audioInitialized) return;
+                Tone.Transport.stop();
+                Tone.Transport.start();
+                tensePattern.start(0);
+            };
+
+            const stopTenseMusic = () => {
+                if (!isSoundOn || !tensePattern) return;
+                tensePattern.stop();
+                Tone.Transport.stop();
+            };
+
+            const playWinnerSound = () => {
+                if (!isSoundOn || !audioInitialized) return;
+                winnerSynth.triggerAttackRelease("8n");
+            };
+            
+            const toggleSound = () => {
+                isSoundOn = !isSoundOn;
+                soundToggleBtn.textContent = isSoundOn ? '🔊' : '🔇';
+                if(!isSoundOn) {
+                    stopTenseMusic();
+                }
+            };
+
+            const switchTab = (tabName) => {
+                activeDataSource = tabName;
+                if (tabName === 'cloud') {
+                    tabContentCloud.classList.remove('hidden');
+                    tabContentCustom.classList.add('hidden');
+                    tabCloudBtn.classList.add('active');
+                    tabCustomBtn.classList.remove('active');
+                    generateLinkBtn.disabled = false;
+                } else {
+                    tabContentCloud.classList.add('hidden');
+                    tabContentCustom.classList.remove('hidden');
+                    tabCloudBtn.classList.remove('active');
+                    tabCustomBtn.classList.add('active');
+                    generateLinkBtn.disabled = true;
+                }
             };
 
             const addPrizeRow = (name = '', quantity = 1) => {
@@ -592,24 +729,47 @@
                     prizes.push({ name, quantity, winners: [] });
                     totalPrizeQuantity += quantity;
                 }
-                if (totalPrizeQuantity > participants.length) {
+                if (participants.length > 0 && totalPrizeQuantity > participants.length) {
                     updateStatus(`警告：獎項總數 (${totalPrizeQuantity}) 大於參與人數 (${participants.length})！`, true);
                 }
                 return true;
             };
 
             const handleLoadData = async () => {
+                loadButton.disabled = true;
+                updateStatus('正在處理名單...');
+
+                if (activeDataSource === 'cloud') {
+                    await loadFromCloud();
+                } else {
+                    loadFromCustomInput();
+                }
+            };
+            
+            const loadFromCustomInput = () => {
+                const rawList = customListInput.value;
+                participants = rawList.split(/[,，\n]+/).map(name => name.trim()).filter(name => name.length > 0);
+                
+                if (participants.length > 0 && readAndValidatePrizes()) {
+                    updateStatus(`成功載入 ${participants.length} 位參與者！`, false);
+                    switchToLotteryView();
+                } else {
+                   if (participants.length === 0) updateStatus(`自訂名單中沒有有效的名字。`, true);
+                   loadButton.disabled = false;
+                }
+            };
+
+            const loadFromCloud = async () => {
                 const sheetUrl = sheetUrlInput.value.trim();
                 const sheetName = sheetNameInput.value.trim();
                 const columnLetter = columnLetterInput.value.trim().toUpperCase();
-                if (!sheetUrl) { updateStatus('請輸入 Google 試算表網址！', true); return; }
+                if (!sheetUrl) { updateStatus('請輸入 Google 試算表網址！', true); loadButton.disabled = false; return; }
                 const sheetIdMatch = sheetUrl.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-                if (!sheetIdMatch || !sheetIdMatch[1]) { updateStatus('無法從網址中解析出試算表 ID，請確認網址是否正確。', true); return; }
+                if (!sheetIdMatch || !sheetIdMatch[1]) { updateStatus('無法從網址中解析出試算表 ID，請確認網址是否正確。', true); loadButton.disabled = false; return; }
                 const sheetId = sheetIdMatch[1];
                 updateStatus('正在從雲端讀取名單...');
-                loadButton.disabled = true;
+                
                 try {
-                    // Append a timestamp to bypass Google's cache
                     const timestamp = new Date().getTime();
                     const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&_=${timestamp}`;
                     const response = await fetch(csvUrl);
@@ -638,7 +798,12 @@
                 }).filter(name => name && name.length > 0);
             };
 
-            const handleDrawWinner = () => {
+            const handleDrawWinner = async () => {
+                 if (typeof Tone !== 'undefined' && !audioInitialized) {
+                    await Tone.start();
+                    setupAudio();
+                }
+
                 if (drawButton.textContent === '重置') {
                     resetApp();
                     return;
@@ -665,15 +830,18 @@
                 }
                 drawButton.disabled = true;
                 winnerDisplay.classList.remove('winner-reveal');
+                playTenseMusic();
                 rollingInterval = setInterval(() => {
                     winnerDisplay.textContent = participants[Math.floor(Math.random() * participants.length)];
                 }, 80);
                 setTimeout(() => {
                     clearInterval(rollingInterval);
+                    stopTenseMusic();
                     const winnerIndex = Math.floor(Math.random() * participants.length);
                     const winner = participants.splice(winnerIndex, 1)[0];
                     winnerDisplay.textContent = winner;
                     winnerDisplay.classList.add('winner-reveal');
+                    playWinnerSound();
                     launchConfetti();
                     currentPrize.winners.push(winner);
                     updateParticipantCount();
@@ -684,8 +852,9 @@
             };
 
             const setupThemes = () => {
-                themeSelector.innerHTML = '';
-                themes.forEach(theme => {
+                const themeContainer = document.getElementById('theme-selector');
+                themeContainer.innerHTML = '';
+                 themes.forEach(theme => {
                     const button = document.createElement('button');
                     button.className = 'theme-button';
                     button.title = theme.name;
@@ -695,8 +864,17 @@
                         applyTheme(theme.id);
                         themeSelectorPopover.classList.add('hidden');
                     });
-                    themeSelector.appendChild(button);
+                    themeContainer.appendChild(button);
                 });
+
+                // Re-add the sound toggle button
+                const soundBtn = document.createElement('button');
+                soundBtn.id = 'sound-toggle-btn';
+                soundBtn.className = 'text-2xl p-2 rounded-full transition-colors duration-300 hover:bg-white/10';
+                soundBtn.setAttribute('aria-label', '切換音效');
+                soundBtn.innerHTML = '🔊';
+                soundBtn.addEventListener('click', toggleSound);
+                themeContainer.prepend(soundBtn);
             };
 
             const applyTheme = (themeId) => {
@@ -724,12 +902,28 @@
             const switchToLotteryView = () => {
                 settingsSection.classList.add('hidden');
                 lotterySection.classList.remove('hidden');
-                // Initially, the main panel takes full width and winners list is hidden
                 mainDrawPanel.classList.remove('md:w-[70%]');
                 mainDrawPanel.classList.add('md:w-full');
                 winnersListContainer.classList.add('hidden');
                 updateParticipantCount();
                 updatePrizeDisplay();
+            };
+
+            const adjustPrizeNameFontSize = () => {
+                const nameElement = document.getElementById('finished-prize-name');
+                if (!nameElement) return;
+
+                const container = winnerDisplay;
+                let fontSize = 4;
+                const minFontSize = 1;
+                const step = 0.2;
+
+                nameElement.style.fontSize = `${fontSize}rem`;
+
+                while (nameElement.scrollWidth > container.clientWidth * 0.95 && fontSize > minFontSize) {
+                    fontSize -= step;
+                    nameElement.style.fontSize = `${fontSize}rem`;
+                }
             };
 
             const updatePrizeDisplay = () => {
@@ -744,7 +938,13 @@
                 const progress = `${currentPrize.winners.length} / ${currentPrize.quantity}`;
                 currentPrizeDisplay.textContent = `正在抽取: ${currentPrize.name} (${progress})`;
                 if (currentPrize.winners.length >= currentPrize.quantity) {
-                    winnerDisplay.textContent = `「${currentPrize.name}」已抽完！`;
+                    winnerDisplay.innerHTML = `
+                        <div class="flex flex-col items-center justify-center leading-tight">
+                            <div id="finished-prize-name" class="w-full px-4 text-center whitespace-nowrap" style="font-size: 4rem;">${currentPrize.name}</div>
+                            <div class="text-4xl mt-2">已抽完！</div>
+                        </div>`;
+                    adjustPrizeNameFontSize();
+                    
                     const nextPrize = prizes[currentPrizeIndex + 1];
                     drawButton.textContent = nextPrize ? `繼續抽「${nextPrize.name}」` : '抽獎結束';
                     if (!nextPrize) {
@@ -766,7 +966,7 @@
                     mainDrawPanel.classList.remove('md:w-full');
                     mainDrawPanel.classList.add('md:w-[70%]');
                 } else {
-                    return; // Don't show or update the list if there are no winners yet
+                    return;
                 }
 
                 winnersList.innerHTML = '';
@@ -805,7 +1005,6 @@
                     sheetName: sheetNameInput.value.trim(),
                     column: columnLetterInput.value.trim()
                 });
-                // More robust way to get the base URL, avoiding potential issues with origin/pathname
                 const baseUrl = window.location.href.split('?')[0];
                 const fullUrl = `${baseUrl}?${params.toString()}`;
                 shareLinkOutput.value = fullUrl;
@@ -830,7 +1029,7 @@
             };
             
             const exportResultsToCsv = () => {
-                let csvContent = '\uFEFF"獎項","得獎人"\n'; // Add BOM for Excel compatibility
+                let csvContent = '\uFEFF"獎項","得獎人"\n';
                 prizes.forEach(prize => {
                     prize.winners.forEach(winner => {
                         const winnerEscaped = `"${winner.replace(/"/g, '""')}"`;
@@ -859,16 +1058,13 @@
             };
 
             const resetApp = () => {
-                // Hide lottery section, show settings section
                 settingsSection.classList.remove('hidden');
                 lotterySection.classList.add('hidden');
 
-                // Reset state
                 participants = [];
                 prizes = [];
                 currentPrizeIndex = 0;
 
-                // Reset lottery UI
                 winnerDisplay.textContent = '準備開始！';
                 winnerDisplay.classList.remove('winner-reveal');
                 winnersList.innerHTML = '';
@@ -879,14 +1075,13 @@
                 participantCountSpan.textContent = '0';
                 currentPrizeDisplay.textContent = '';
                 
-                // Reset draw button state
                 drawButton.textContent = '開始摸彩';
                 drawButton.disabled = false;
 
-                // Reset settings UI
                 sheetUrlInput.value = '';
                 sheetNameInput.value = '工作表1';
                 columnLetterInput.value = 'A';
+                customListInput.value = '';
                 prizesContainer.innerHTML = '';
                 addPrizeRow('三獎', 3);
                 addPrizeRow('二獎', 2);
@@ -896,6 +1091,7 @@
                 updateStatus('');
                 linkOutputContainer.classList.add('hidden');
                 shareLinkOutput.value = '';
+                switchTab('cloud');
             };
 
             const launchConfetti = () => {
