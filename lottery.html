@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>居久屋微醺夜摸彩機</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --card-bg: rgba(30, 30, 30, 0.8);
+            --text-color: #f0e6d2;
+            --text-muted-color: #a0aec0;
+            --primary-color: #e53e3e;
+            --primary-shadow-color: rgba(229, 62, 62, 0.4);
+            --secondary-color: #4a5568;
+            --secondary-hover-color: #2d3748;
+            --input-bg: #2d3748;
+            --input-border-color: #4a5568;
+            --accent-color: #ffab00;
+            --accent-glow-color: #e53e3e;
+            --border-color: rgba(255, 171, 0, 0.3);
+            --winner-border-color: rgba(255, 171, 0, 0.5);
+            --danger-color: #f56565;
+            --tag-bg: rgba(74, 85, 104, 0.5);
+            --footer-bg: rgba(26, 26, 26, 0.8);
+        }
+        body.theme-sakura {
+            --bg-color: #fdf2f8;
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --text-color: #581c87;
+            --text-muted-color: #7e22ce;
+            --primary-color: #db2777;
+            --primary-shadow-color: rgba(219, 39, 119, 0.4);
+            --secondary-color: #f3e8ff;
+            --secondary-hover-color: #e9d5ff;
+            --input-bg: #faf5ff;
+            --input-border-color: #e9d5ff;
+            --accent-color: #c026d3;
+            --accent-glow-color: #db2777;
+            --border-color: rgba(219, 39, 119, 0.3);
+            --winner-border-color: rgba(219, 39, 119, 0.5);
+            --danger-color: #be185d;
+            --tag-bg: rgba(243, 232, 255, 0.8);
+            --footer-bg: rgba(253, 242, 248, 0.8);
+        }
+        body.theme-midnight {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.8);
+            --text-color: #e2e8f0;
+            --text-muted-color: #94a3b8;
+            --primary-color: #38bdf8;
+            --primary-shadow-color: rgba(56, 189, 248, 0.4);
+            --secondary-color: #334155;
+            --secondary-hover-color: #475569;
+            --input-bg: #1e293b;
+            --input-border-color: #334155;
+            --accent-color: #67e8f9;
+            --accent-glow-color: #38bdf8;
+            --border-color: rgba(56, 189, 248, 0.3);
+            --winner-border-color: rgba(56, 189, 248, 0.5);
+            --danger-color: #fb7185;
+            --tag-bg: rgba(51, 65, 85, 0.8);
+            --footer-bg: rgba(15, 23, 42, 0.8);
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            background-image:
+                radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0),
+                radial-gradient(circle at 10px 10px, rgba(255,255,255,0.05) 1px, transparent 0);
+            background-size: 20px 20px;
+            transition: background-color 0.5s ease, color 0.5s ease;
+        }
+        .izakaya-title {
+            font-family: 'Noto Sans TC', sans-serif;
+            text-shadow: none;
+            color: var(--accent-color);
+        }
+        .card {
+            background-color: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: background-color 0.5s ease, border-color 0.5s ease;
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: #fff;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--primary-shadow-color);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--primary-shadow-color);
+        }
+        .btn-primary:disabled {
+            background-color: var(--secondary-color);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+             transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: var(--secondary-hover-color);
+        }
+        .form-input {
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border-color);
+            color: var(--text-color);
+        }
+        .winner-display {
+            min-height: 150px;
+            font-size: 4rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border: 2px dashed var(--winner-border-color);
+            background-color: rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            word-break: break-all;
+        }
+        .winner-reveal {
+            animation: winner-glow 2s ease-in-out;
+        }
+        @keyframes winner-glow {
+            0% { transform: scale(0.8); text-shadow: none; }
+            50% { transform: scale(1.1); color: var(--accent-color); text-shadow: 0 0 10px var(--accent-color), 0 0 20px var(--accent-color), 0 0 40px var(--accent-color); }
+            100% { transform: scale(1); text-shadow: none; }
+        }
+        #version-modal.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #version-modal.is-open > .modal-content {
+            transform: scale(1);
+        }
+        .theme-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease-in-out;
+        }
+        .theme-button.active {
+            border-color: var(--accent-color);
+            transform: scale(1.1);
+            box-shadow: 0 0 10px var(--accent-color);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 pb-16">
+
+    <div class="w-full max-w-2xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-5xl md:text-6xl font-bold izakaya-title">居久屋微醺夜摸彩機</h1>
+        </header>
+
+        <!-- Settings Section -->
+        <section id="settings-section" class="card p-8 rounded-lg mb-6">
+            <div class="space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold mb-4" style="color: var(--accent-color);">名單設定</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="sheet-url" class="block mb-1 font-semibold" style="color: var(--accent-color);">Google 試算表網址</label>
+                            <input type="url" id="sheet-url" class="form-input w-full p-2 rounded" placeholder="貼上完整的 Google 試算表網址">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="sheet-name" class="block mb-1 font-semibold" style="color: var(--accent-color);">工作表名稱</label>
+                                <input type="text" id="sheet-name" class="form-input w-full p-2 rounded" value="工作表1">
+                            </div>
+                            <div>
+                                <label for="column-letter" class="block mb-1 font-semibold" style="color: var(--accent-color);">名單在哪一欄？</label>
+                                <input type="text" id="column-letter" maxlength="2" class="form-input w-full p-2 rounded" value="A" placeholder="A, B, C...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr style="border-color: var(--input-border-color);">
+
+                <div>
+                    <h2 class="text-2xl font-bold mb-4" style="color: var(--accent-color);">獎項設定</h2>
+                    <div id="prizes-container" class="space-y-3">
+                    </div>
+                    <button id="add-prize-btn" class="mt-4 w-full btn-secondary py-2 rounded-lg text-lg font-bold">＋ 新增獎項</button>
+                </div>
+                
+                <hr style="border-color: var(--input-border-color);">
+
+                <div>
+                    <h2 class="text-2xl font-bold mb-4" style="color: var(--accent-color);">布景主題選擇</h2>
+                    <div id="theme-selector" class="flex justify-center gap-4">
+                    </div>
+                </div>
+            </div>
+
+            <button id="load-button" class="mt-8 btn-primary w-full py-3 rounded-lg text-xl font-bold">載入名單並開始</button>
+            
+            <div class="mt-4">
+                <button id="generate-link-btn" class="w-full btn-secondary py-2 rounded-lg text-lg">產生獨立摸彩連結</button>
+                <div id="link-output-container" class="hidden mt-2 flex gap-2">
+                    <input type="text" id="share-link-output" class="form-input w-full p-2 rounded" readonly>
+                    <button id="copy-link-btn" class="btn-primary px-4 rounded">複製</button>
+                </div>
+            </div>
+
+            <p id="status-message" class="text-center mt-4 h-6" style="color: var(--accent-color);"></p>
+        </section>
+
+        <!-- Lottery Section -->
+        <section id="lottery-section" class="hidden">
+            <div class="card p-8 rounded-lg">
+                 <div class="flex flex-col sm:flex-row justify-end items-center mb-4 gap-2">
+                     <p>剩餘摸彩人數: <span id="participant-count" class="font-bold text-2xl" style="color: var(--accent-color);">0</span></p>
+                </div>
+                <h3 id="current-prize-display" class="text-3xl text-center mb-4 font-bold" style="color: var(--accent-color);"></h3>
+                <div id="winner-display" class="winner-display rounded-lg p-4 mb-6 text-4xl md:text-6xl">
+                    準備開始！
+                </div>
+                <button id="draw-button" class="btn-primary w-full py-4 rounded-lg text-2xl font-bold">開始摸彩</button>
+            </div>
+             <div id="winners-list-container" class="mt-6 hidden">
+                <div class="card p-6 rounded-lg">
+                    <h3 class="text-xl font-bold text-center mb-4" style="color: var(--accent-color);">🎉 得獎名單 🎉</h3>
+                    <div id="winners-list" class="space-y-4 text-center text-lg">
+                    </div>
+                    <button id="export-csv-btn" class="hidden mt-4 btn-secondary w-full py-3 rounded-lg text-xl font-bold">匯出得獎名單 (CSV)</button>
+                </div>
+            </div>
+        </section>
+        
+    </div>
+
+    <!-- Version History Modal -->
+    <div id="version-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out opacity-0 pointer-events-none">
+        <div class="modal-content card w-full max-w-lg rounded-lg p-8 relative transform scale-95 transition-transform duration-300 ease-in-out">
+            <button id="close-modal-btn" class="absolute top-2 right-3 hover:text-white text-3xl leading-none font-bold" style="color: var(--text-muted-color);">&times;</button>
+            <h3 class="text-xl font-bold text-center mb-4" style="color: var(--accent-color);">版本更新紀錄</h3>
+            <ul class="space-y-4 max-h-[60vh] overflow-y-auto pr-4" style="color: var(--text-color);">
+                <li>
+                    <strong style="color: var(--accent-color);">v1.6.4 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>調整「產生分享連結」按鈕文字為「產生獨立摸彩連結」。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.6.3 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>調整「匯出得獎名單」按鈕位置至得獎名單下方。</li>
+                    </ul>
+                </li>
+                 <li>
+                    <strong style="color: var(--accent-color);">v1.6.2 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正「產生分享連結」功能在某些環境下會產生錯誤網址的問題。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.6.1 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正因瀏覽器權限政策導致「複製連結」功能在某些環境下失效的問題。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.6.0 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>新增「匯出得獎名單」功能，可將結果存為 CSV 檔案。</li>
+                        <li>新增「產生分享連結」功能，一鍵產生包含設定的彩蛋網址。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.5.2 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>移除抽獎頁面「開獎囉！」標題。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.5.1 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正更新得獎名單時發生的 `HierarchyRequestError` 錯誤。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.5.0 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>移除設定區塊標題（名單、獎項、主題）的霓虹燈陰影效果。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.4.0 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>調整標題樣式為粗黑體，移除圖示與霓虹燈效果。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.3.0 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>新增「布景主題」功能，內建三種風格並記憶選擇。</li>
+                        <li>程式碼 CSS 樣式重構，改用 CSS 變數管理。</li>
+                    </ul>
+                </li>
+                 <li>
+                    <strong style="color: var(--accent-color);">v1.2.0 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>新增「獎項設定」功能，可自訂獎項名稱與數量。</li>
+                        <li>抽獎流程依獎項順序進行，並顯示當前進度。</li>
+                        <li>得獎名單依獎項分類顯示。</li>
+                        <li>修正版本紀錄視窗無法關閉的問題。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.1.0 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>新增頁腳，包含版本號、Gemini 驅動及作者連結。</li>
+                        <li>新增版本更新紀錄彈出視窗，並加入簡易動效。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v1.0.0 (2025-09-29)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>初始版本發布，整合 Google 試算表作為名單來源。</li>
+                        <li>實現拉霸機抽獎動畫、彩帶效果及得獎名單。</li>
+                        <li>支援手動輸入及 URL 參數（彩蛋）兩種模式。</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <footer class="fixed bottom-0 left-0 right-0 p-3 text-center text-xs backdrop-blur-sm" style="color: var(--text-muted-color); background-color: var(--footer-bg);">
+        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v1.6.4</span> |
+        <span>由 Google Gemini 強力驅動</span> |
+        <a href="https://bit.ly/Alaing" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">丫亮校長練功坊</a>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const settingsSection = document.getElementById('settings-section');
+            const lotterySection = document.getElementById('lottery-section');
+            const sheetUrlInput = document.getElementById('sheet-url');
+            const sheetNameInput = document.getElementById('sheet-name');
+            const columnLetterInput = document.getElementById('column-letter');
+            const prizesContainer = document.getElementById('prizes-container');
+            const addPrizeBtn = document.getElementById('add-prize-btn');
+            const themeSelector = document.getElementById('theme-selector');
+            const loadButton = document.getElementById('load-button');
+            const drawButton = document.getElementById('draw-button');
+            const exportCsvBtn = document.getElementById('export-csv-btn');
+            const statusMessage = document.getElementById('status-message');
+            const participantCountSpan = document.getElementById('participant-count');
+            const currentPrizeDisplay = document.getElementById('current-prize-display');
+            const winnerDisplay = document.getElementById('winner-display');
+            const winnersListContainer = document.getElementById('winners-list-container');
+            const winnersList = document.getElementById('winners-list');
+            const versionBtn = document.getElementById('version-btn');
+            const versionModal = document.getElementById('version-modal');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const generateLinkBtn = document.getElementById('generate-link-btn');
+            const linkOutputContainer = document.getElementById('link-output-container');
+            const shareLinkOutput = document.getElementById('share-link-output');
+            const copyLinkBtn = document.getElementById('copy-link-btn');
+
+            // State
+            let participants = [];
+            let prizes = [];
+            let currentPrizeIndex = 0;
+            let rollingInterval = null;
+            const themes = [
+                { id: 'izakaya', name: '居酒屋', colors: ['#e53e3e', '#ffab00'] },
+                { id: 'sakura', name: '櫻花', colors: ['#db2777', '#fdf2f8'] },
+                { id: 'midnight', name: '午夜', colors: ['#38bdf8', '#0f172a'] }
+            ];
+
+            const init = () => {
+                addPrizeBtn.addEventListener('click', () => addPrizeRow());
+                loadButton.addEventListener('click', handleLoadData);
+                drawButton.addEventListener('click', handleDrawWinner);
+                versionBtn.addEventListener('click', openModal);
+                closeModalBtn.addEventListener('click', closeModal);
+                versionModal.addEventListener('click', (e) => {
+                    if (e.target === versionModal) closeModal();
+                });
+                generateLinkBtn.addEventListener('click', generateShareLink);
+                copyLinkBtn.addEventListener('click', copyShareLink);
+                exportCsvBtn.addEventListener('click', exportResultsToCsv);
+
+                addPrizeRow('三獎', 3);
+                addPrizeRow('二獎', 2);
+                addPrizeRow('頭獎', 1);
+
+                setupThemes();
+                loadTheme();
+                handleUrlParams();
+            };
+
+            const addPrizeRow = (name = '', quantity = 1) => {
+                const row = document.createElement('div');
+                row.className = 'prize-row flex items-center gap-2';
+                row.innerHTML = `
+                    <input type="text" class="prize-name form-input w-full p-2 rounded" value="${name}" placeholder="獎項名稱">
+                    <input type="number" class="prize-quantity form-input w-24 p-2 rounded" value="${quantity}" min="1" placeholder="數量">
+                    <button class="remove-prize-btn btn-secondary px-3 py-2 rounded" style="color: var(--danger-color);">✕</button>
+                `;
+                prizesContainer.appendChild(row);
+                row.querySelector('.remove-prize-btn').addEventListener('click', () => row.remove());
+            };
+            
+            const handleUrlParams = () => {
+                const params = new URLSearchParams(window.location.search);
+                if (params.has('sheetUrl') && params.has('sheetName') && params.has('column')) {
+                    sheetUrlInput.value = params.get('sheetUrl');
+                    sheetNameInput.value = params.get('sheetName');
+                    columnLetterInput.value = params.get('column');
+                    handleLoadData();
+                }
+            };
+
+            const readAndValidatePrizes = () => {
+                prizes = [];
+                const prizeRows = prizesContainer.querySelectorAll('.prize-row');
+                if (prizeRows.length === 0) {
+                    updateStatus('請至少設定一個獎項！', true); return false;
+                }
+                let totalPrizeQuantity = 0;
+                for (const row of prizeRows) {
+                    const name = row.querySelector('.prize-name').value.trim();
+                    const quantity = parseInt(row.querySelector('.prize-quantity').value, 10);
+                    if (!name) { updateStatus('獎項名稱不可為空！', true); return false; }
+                    if (isNaN(quantity) || quantity < 1) { updateStatus(`獎項「${name}」的數量必須是正整數！`, true); return false; }
+                    prizes.push({ name, quantity, winners: [] });
+                    totalPrizeQuantity += quantity;
+                }
+                if (totalPrizeQuantity > participants.length) {
+                    updateStatus(`警告：獎項總數 (${totalPrizeQuantity}) 大於參與人數 (${participants.length})！`, true);
+                }
+                return true;
+            };
+
+            const handleLoadData = async () => {
+                const sheetUrl = sheetUrlInput.value.trim();
+                const sheetName = sheetNameInput.value.trim();
+                const columnLetter = columnLetterInput.value.trim().toUpperCase();
+                if (!sheetUrl) { updateStatus('請輸入 Google 試算表網址！', true); return; }
+                const sheetIdMatch = sheetUrl.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+                if (!sheetIdMatch || !sheetIdMatch[1]) { updateStatus('無法從網址中解析出試算表 ID，請確認網址是否正確。', true); return; }
+                const sheetId = sheetIdMatch[1];
+                updateStatus('正在從雲端讀取名單...');
+                loadButton.disabled = true;
+                try {
+                    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+                    const response = await fetch(csvUrl);
+                    if (!response.ok) throw new Error(`網路回應錯誤: ${response.statusText}`);
+                    const csvText = await response.text();
+                    parseCsvData(csvText, columnLetter);
+                    if (participants.length > 0 && readAndValidatePrizes()) {
+                        updateStatus(`成功載入 ${participants.length} 位參與者！`, false);
+                        switchToLotteryView();
+                    } else {
+                       if (participants.length === 0) updateStatus(`在 ${columnLetter} 欄找不到任何資料，請確認工作表與欄位名稱。`, true);
+                       loadButton.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('讀取試算表時發生錯誤:', error);
+                    updateStatus('讀取失敗！請檢查：1. 網址是否正確 2. 試算表是否已設為「知道連結的任何人皆可檢視」。', true);
+                    loadButton.disabled = false;
+                }
+            };
+
+            const parseCsvData = (csvText, columnLetter) => {
+                const columnIndex = columnLetter.charCodeAt(0) - 'A'.charCodeAt(0);
+                participants = csvText.split('\n').slice(1).map(row => {
+                    const columns = row.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''));
+                    return columns[columnIndex] || null;
+                }).filter(name => name && name.length > 0);
+            };
+
+            const handleDrawWinner = () => {
+                if (participants.length === 0) {
+                    winnerDisplay.textContent = '所有人都已中獎！';
+                    drawButton.disabled = true; return;
+                }
+                const currentPrize = prizes[currentPrizeIndex];
+                if (!currentPrize) return;
+                if (currentPrize.winners.length >= currentPrize.quantity) {
+                    currentPrizeIndex++;
+                    updatePrizeDisplay();
+                    winnerDisplay.textContent = '準備開始！';
+                    return;
+                }
+                drawButton.disabled = true;
+                winnerDisplay.classList.remove('winner-reveal');
+                rollingInterval = setInterval(() => {
+                    winnerDisplay.textContent = participants[Math.floor(Math.random() * participants.length)];
+                }, 80);
+                setTimeout(() => {
+                    clearInterval(rollingInterval);
+                    const winnerIndex = Math.floor(Math.random() * participants.length);
+                    const winner = participants.splice(winnerIndex, 1)[0];
+                    winnerDisplay.textContent = winner;
+                    winnerDisplay.classList.add('winner-reveal');
+                    launchConfetti();
+                    currentPrize.winners.push(winner);
+                    updateParticipantCount();
+                    updateWinnersList();
+                    updatePrizeDisplay(); 
+                    drawButton.disabled = false;
+                }, 4000);
+            };
+
+            const setupThemes = () => {
+                themeSelector.innerHTML = '';
+                themes.forEach(theme => {
+                    const button = document.createElement('button');
+                    button.className = 'theme-button';
+                    button.title = theme.name;
+                    button.dataset.theme = theme.id;
+                    button.style.background = `linear-gradient(45deg, ${theme.colors[0]}, ${theme.colors[1]})`;
+                    button.addEventListener('click', () => applyTheme(theme.id));
+                    themeSelector.appendChild(button);
+                });
+            };
+
+            const applyTheme = (themeId) => {
+                document.body.className = document.body.className.replace(/theme-\w+/g, '');
+                if (themeId !== 'izakaya') document.body.classList.add(`theme-${themeId}`);
+                localStorage.setItem('lotteryTheme', themeId);
+                document.querySelectorAll('.theme-button').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.theme === themeId);
+                });
+            };
+
+            const loadTheme = () => {
+                const savedTheme = localStorage.getItem('lotteryTheme') || 'izakaya';
+                applyTheme(savedTheme);
+            };
+
+            const openModal = () => versionModal.classList.add('is-open');
+            const closeModal = () => versionModal.classList.remove('is-open');
+            
+            const updateStatus = (message, isError = false) => {
+                statusMessage.textContent = message;
+                statusMessage.style.color = isError ? 'var(--danger-color)' : 'var(--accent-color)';
+            };
+            
+            const switchToLotteryView = () => {
+                settingsSection.classList.add('hidden');
+                lotterySection.classList.remove('hidden');
+                updateParticipantCount();
+                updatePrizeDisplay();
+            };
+
+            const updatePrizeDisplay = () => {
+                 if (currentPrizeIndex >= prizes.length) {
+                    currentPrizeDisplay.textContent = '所有獎項已抽完！';
+                    drawButton.textContent = '抽獎結束';
+                    drawButton.disabled = true;
+                    exportCsvBtn.classList.remove('hidden');
+                    return;
+                }
+                const currentPrize = prizes[currentPrizeIndex];
+                const progress = `${currentPrize.winners.length} / ${currentPrize.quantity}`;
+                currentPrizeDisplay.textContent = `正在抽取: ${currentPrize.name} (${progress})`;
+                if (currentPrize.winners.length >= currentPrize.quantity) {
+                    winnerDisplay.textContent = `「${currentPrize.name}」已抽完！`;
+                    const nextPrize = prizes[currentPrizeIndex + 1];
+                    drawButton.textContent = nextPrize ? `繼續抽「${nextPrize.name}」` : '抽獎結束';
+                    if (!nextPrize) {
+                       drawButton.disabled = true;
+                       exportCsvBtn.classList.remove('hidden');
+                    }
+                } else {
+                    drawButton.textContent = `抽出一位「${currentPrize.name}」得主`;
+                }
+            };
+
+            const updateParticipantCount = () => participantCountSpan.textContent = participants.length;
+
+            const updateWinnersList = () => {
+                winnersListContainer.classList.remove('hidden');
+                winnersList.innerHTML = '';
+                prizes.forEach(prize => {
+                    if (prize.winners.length > 0) {
+                        const prizeContainer = document.createElement('div');
+                        prizeContainer.innerHTML = `<h4 class="font-bold text-lg" style="color: var(--accent-color);">${prize.name} (${prize.winners.length}/${prize.quantity})</h4>`;
+                        const winnerNames = document.createElement('div');
+                        winnerNames.className = 'flex flex-wrap justify-center gap-2 mt-1';
+                        prize.winners.forEach(winner => {
+                             const winnerTag = document.createElement('span');
+                             winnerTag.textContent = winner;
+                             winnerTag.className = 'px-3 py-1 rounded-md';
+                             winnerTag.style.backgroundColor = 'var(--tag-bg)';
+                             winnerNames.appendChild(winnerTag);
+                        });
+                        prizeContainer.appendChild(winnerNames);
+                        winnersList.appendChild(prizeContainer);
+                    }
+                });
+            };
+
+            const generateShareLink = () => {
+                const sheetUrl = sheetUrlInput.value.trim();
+                if (!sheetUrl) {
+                    updateStatus('請先輸入試算表網址！', true); return;
+                }
+                const params = new URLSearchParams({
+                    sheetUrl: sheetUrl,
+                    sheetName: sheetNameInput.value.trim(),
+                    column: columnLetterInput.value.trim()
+                });
+                // More robust way to get the base URL, avoiding potential issues with origin/pathname
+                const baseUrl = window.location.href.split('?')[0];
+                const fullUrl = `${baseUrl}?${params.toString()}`;
+                shareLinkOutput.value = fullUrl;
+                linkOutputContainer.classList.remove('hidden');
+            };
+
+            const copyShareLink = () => {
+                // Use the older document.execCommand for better compatibility, especially in iFrames
+                shareLinkOutput.select();
+                shareLinkOutput.setSelectionRange(0, 99999); // For mobile devices
+
+                try {
+                    document.execCommand('copy');
+                    copyLinkBtn.textContent = '已複製!';
+                    setTimeout(() => { copyLinkBtn.textContent = '複製'; }, 2000);
+                } catch (err) {
+                    console.error('複製失敗: ', err);
+                    copyLinkBtn.textContent = '失敗';
+                     setTimeout(() => { copyLinkBtn.textContent = '複製'; }, 2000);
+                }
+
+                // Deselect the text after copying
+                window.getSelection().removeAllRanges();
+            };
+            
+            const exportResultsToCsv = () => {
+                let csvContent = '\uFEFF"獎項","得獎人"\n'; // Add BOM for Excel compatibility
+                prizes.forEach(prize => {
+                    prize.winners.forEach(winner => {
+                        const winnerEscaped = `"${winner.replace(/"/g, '""')}"`;
+                        const prizeNameEscaped = `"${prize.name.replace(/"/g, '""')}"`;
+                        csvContent += `${prizeNameEscaped},${winnerEscaped}\n`;
+                    });
+                });
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "居久屋微醺夜摸彩機-得獎名單.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            const launchConfetti = () => {
+                const duration = 2 * 1000;
+                const animationEnd = Date.now() + duration;
+                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+                function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+                const interval = setInterval(() => {
+                    const timeLeft = animationEnd - Date.now();
+                    if (timeLeft <= 0) return clearInterval(interval);
+                    const particleCount = 50 * (timeLeft / duration);
+                    confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+                    confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+                }, 250);
+            };
+
+            init();
+        });
+    </script>
+</body>
+</html>
+
