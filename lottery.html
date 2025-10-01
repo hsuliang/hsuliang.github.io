@@ -139,13 +139,41 @@
             word-break: break-all;
         }
         .winner-reveal {
-            animation: winner-glow 2s ease-in-out;
+            animation: winner-glow 1.5s ease-in-out;
         }
         @keyframes winner-glow {
-            0% { transform: scale(0.8); text-shadow: none; }
-            50% { transform: scale(1.1); color: var(--accent-color); text-shadow: 0 0 10px var(--accent-color), 0 0 20px var(--accent-color), 0 0 40px var(--accent-color); }
-            100% { transform: scale(1); text-shadow: none; }
+            0% { transform: scale(0.8); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; color: var(--accent-color); text-shadow: 0 0 10px var(--accent-color), 0 0 20px var(--accent-color); }
+            100% { transform: scale(1); opacity: 1; }
         }
+        .effect-spotlight {
+            animation: spotlight-pulse 2s ease-in-out;
+        }
+        @keyframes spotlight-pulse {
+            0% {
+                transform: scale(0.9);
+                color: var(--text-color);
+                text-shadow: 0 0 5px rgba(255,255,255,0.5), 0 0 10px var(--accent-color);
+            }
+            50% {
+                transform: scale(1.1);
+                color: var(--accent-color);
+                text-shadow: 0 0 20px rgba(255,255,255,1), 0 0 40px var(--accent-color), 0 0 70px var(--accent-glow-color);
+            }
+            100% {
+                transform: scale(1);
+                color: var(--text-color);
+                text-shadow: 0 0 5px rgba(255,255,255,0.5), 0 0 10px var(--accent-color);
+            }
+        }
+        @keyframes marquee-effect {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .effect-marquee {
+            animation: marquee-effect 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
         #version-modal.is-open {
             opacity: 1;
             pointer-events: auto;
@@ -238,10 +266,31 @@
             
             <!-- Prize Setup Card -->
             <div class="card p-8 rounded-lg">
-                 <h2 class="text-2xl font-bold mb-4" style="color: var(--accent-color);">獎項設定</h2>
+                <h2 class="text-2xl font-bold mb-4" style="color: var(--accent-color);">獎項設定</h2>
+                
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold" style="color: var(--accent-color);">儲存目前獎項為範本</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="template-name-input" class="form-input w-full p-2 rounded" placeholder="請輸入範本名稱">
+                        <button id="save-template-btn" class="btn-primary px-4 py-2 rounded-lg text-sm flex-shrink-0">儲存</button>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold" style="color: var(--accent-color);">載入獎項範本</label>
+                    <div id="template-buttons-container" class="flex flex-wrap gap-2">
+                        <!-- Custom templates will be added here by JS -->
+                    </div>
+                </div>
+
+                <hr style="border-color: var(--input-border-color);" class="my-4">
+                
                 <div id="prizes-container" class="space-y-3">
                 </div>
-                <button id="add-prize-btn" class="mt-4 w-full btn-secondary py-2 rounded-lg text-lg font-bold">＋ 新增獎項</button>
+                <div class="flex gap-4 mt-4">
+                    <button id="add-prize-btn" class="w-full btn-secondary py-2 rounded-lg text-lg font-bold">＋ 新增獎項</button>
+                    <button id="clear-prizes-btn" class="w-full btn-secondary py-2 rounded-lg text-lg font-bold" style="background-color: var(--danger-color);">清空獎項</button>
+                </div>
             </div>
 
              <!-- Environment Settings Card -->
@@ -257,6 +306,9 @@
                         </button>
                         <button id="tab-sound" class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg">
                             音效開關
+                        </button>
+                        <button id="tab-effect" class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg">
+                            特效設定
                         </button>
                     </nav>
                 </div>
@@ -279,6 +331,16 @@
                     <div class="flex items-center justify-between">
                          <span class="font-semibold text-lg" style="color: var(--text-color);">點擊圖示以開啟或關閉音效</span>
                          <button id="sound-toggle-btn" class="text-3xl p-2 rounded-full transition-colors duration-300 hover:bg-white/10" aria-label="切換音效">🔊</button>
+                    </div>
+                </div>
+                <div id="tab-content-effect" class="hidden mt-6">
+                    <div>
+                        <label for="winner-effect-select" class="block mb-2 font-semibold" style="color: var(--accent-color);">中獎動畫特效</label>
+                        <select id="winner-effect-select" class="form-input w-full p-2 rounded">
+                            <option value="none">標準效果</option>
+                            <option value="spotlight">聚光燈效果</option>
+                            <option value="marquee">文字跑馬燈</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -331,6 +393,62 @@
             <button id="close-modal-btn" class="absolute top-2 right-3 hover:text-white text-3xl leading-none font-bold" style="color: var(--text-muted-color);">&times;</button>
             <h3 class="text-xl font-bold text-center mb-4" style="color: var(--accent-color);">版本更新紀錄</h3>
             <ul class="space-y-4 max-h-[60vh] overflow-y-auto pr-4" style="color: var(--text-color);">
+                <li>
+                    <strong style="color: var(--accent-color);">v2.3.7 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正因移除「預設範本」按鈕後，殘留的程式碼所造成的啟動錯誤。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.3.6 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>移除「預設範本」按鈕，讓範本功能完全由使用者自訂。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.3.5 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>新增儲存、載入、刪除自訂獎項範本的功能。</li>
+                        <li>將預設範本按鈕文字更新為「預設範本」。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.3.4 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正獎項範本與清空按鈕無作用的問題。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.3.3 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>新增「獎項預設範本」功能，可快速載入常用獎項組合。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.3.2 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正因腳本執行時機造成的 'addEventListener' of null 錯誤。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.3.1 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>修正「聚光燈」效果不明顯的問題，使其更具視覺衝擊力。</li>
+                        <li>將「文字跑馬燈」速度減慢 50%，讓動畫更流暢。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.3.0 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>新增「特效設定」頁籤，提供「聚光燈」與「文字跑馬燈」中獎動畫選項。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong style="color: var(--accent-color);">v2.2.9 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>將頁腳作者名稱更新為「ㄚ亮笑長練功坊」。</li>
+                    </ul>
+                </li>
                 <li>
                     <strong style="color: var(--accent-color);">v2.2.8 (2025-09-30)</strong>
                     <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
@@ -385,7 +503,6 @@
                     <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
                         <li>新增「環境設定」區塊，並將「布景主題」和「音效開關」移入。</li>
                         <li>新增「標題設定」頁籤，可自訂摸彩活動主標題。</li>
-                        <li>移除標題右側的設定圖示，簡化介面。</li>
                     </ul>
                 </li>
                 <li>
@@ -637,13 +754,13 @@
     </div>
     
     <footer class="fixed bottom-0 left-0 right-0 p-3 text-center text-xs backdrop-blur-sm" style="color: var(--text-muted-color); background-color: var(--footer-bg);">
-        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v2.2.8</span> |
+        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v2.3.6</span> |
         <span>由 Google Gemini 強力驅動</span> |
-        <a href="https://bit.ly/Alaing" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors"> 丫亮笑長練功坊 </a>
+        <a href="https://bit.ly/Alaing" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">ㄚ亮笑長練功坊</a>
     </footer>
 
     <script>
-        window.addEventListener('load', () => {
+        document.addEventListener('DOMContentLoaded', () => {
             // DOM Elements
             const mainTitle = document.getElementById('main-title');
             const settingsSection = document.getElementById('settings-section');
@@ -654,6 +771,10 @@
             const customListInput = document.getElementById('custom-list');
             const prizesContainer = document.getElementById('prizes-container');
             const addPrizeBtn = document.getElementById('add-prize-btn');
+            const clearPrizesBtn = document.getElementById('clear-prizes-btn');
+            const templateNameInput = document.getElementById('template-name-input');
+            const saveTemplateBtn = document.getElementById('save-template-btn');
+            const templateButtonsContainer = document.getElementById('template-buttons-container');
             const themeSelector = document.getElementById('theme-selector');
             const loadButton = document.getElementById('load-button');
             const drawButton = document.getElementById('draw-button');
@@ -686,6 +807,9 @@
             const tabContentSound = document.getElementById('tab-content-sound');
             const rollingSound = document.getElementById('rolling-sound');
             const winnerSound = document.getElementById('winner-sound');
+            const tabEffectBtn = document.getElementById('tab-effect');
+            const tabContentEffect = document.getElementById('tab-content-effect');
+            const winnerEffectSelect = document.getElementById('winner-effect-select');
 
 
             // State
@@ -728,12 +852,16 @@
                 tabTitleBtn.addEventListener('click', () => switchEnvTab('title'));
                 tabThemeBtn.addEventListener('click', () => switchEnvTab('theme'));
                 tabSoundBtn.addEventListener('click', () => switchEnvTab('sound'));
+                tabEffectBtn.addEventListener('click', () => switchEnvTab('effect'));
 
                 titleInput.addEventListener('input', (e) => {
                     const newTitle = e.target.value.trim();
                     mainTitle.textContent = newTitle || '居久屋微醺夜摸彩機';
                     document.title = newTitle || '居久屋微醺夜摸彩機';
                 });
+                
+                saveTemplateBtn.addEventListener('click', savePrizeTemplate);
+                clearPrizesBtn.addEventListener('click', clearPrizes);
 
                 addPrizeRow('三獎', 3);
                 addPrizeRow('二獎', 2);
@@ -741,6 +869,7 @@
 
                 setupThemes();
                 loadTheme();
+                renderSavedTemplates();
                 switchTab(activeDataSource);
                 switchEnvTab('title');
                 handleUrlParams();
@@ -803,7 +932,8 @@
                 const tabs = {
                     title: { btn: tabTitleBtn, content: tabContentTitle },
                     theme: { btn: tabThemeBtn, content: tabContentTheme },
-                    sound: { btn: tabSoundBtn, content: tabContentSound }
+                    sound: { btn: tabSoundBtn, content: tabContentSound },
+                    effect: { btn: tabEffectBtn, content: tabContentEffect }
                 };
 
                 Object.values(tabs).forEach(tab => {
@@ -825,6 +955,88 @@
                 `;
                 prizesContainer.appendChild(row);
                 row.querySelector('.remove-prize-btn').addEventListener('click', () => row.remove());
+            };
+            
+            const clearPrizes = () => {
+                prizesContainer.innerHTML = '';
+            };
+
+            const getPrizeTemplates = () => {
+                return JSON.parse(localStorage.getItem('prizeTemplates') || '{}');
+            };
+
+            const savePrizeTemplates = (templates) => {
+                localStorage.setItem('prizeTemplates', JSON.stringify(templates));
+            };
+
+            const savePrizeTemplate = () => {
+                const name = templateNameInput.value.trim();
+                if (!name) {
+                    alert('請為您的獎項範本命名！');
+                    return;
+                }
+
+                const prizeRows = prizesContainer.querySelectorAll('.prize-row');
+                const currentPrizes = Array.from(prizeRows).map(row => ({
+                    name: row.querySelector('.prize-name').value,
+                    quantity: row.querySelector('.prize-quantity').value
+                }));
+
+                if (currentPrizes.length === 0) {
+                    alert('沒有可儲存的獎項！');
+                    return;
+                }
+
+                const templates = getPrizeTemplates();
+                templates[name] = currentPrizes;
+                savePrizeTemplates(templates);
+                templateNameInput.value = '';
+                renderSavedTemplates();
+            };
+
+            const loadPrizeTemplate = (name) => {
+                const templates = getPrizeTemplates();
+                const template = templates[name];
+                if (template) {
+                    clearPrizes();
+                    template.forEach(prize => addPrizeRow(prize.name, prize.quantity));
+                }
+            };
+            
+            const deletePrizeTemplate = (name) => {
+                const templates = getPrizeTemplates();
+                delete templates[name];
+                savePrizeTemplates(templates);
+                renderSavedTemplates();
+            };
+
+            const renderSavedTemplates = () => {
+                const templates = getPrizeTemplates();
+                templateButtonsContainer.innerHTML = '';
+                
+                for (const name in templates) {
+                    const container = document.createElement('div');
+                    container.className = 'custom-template flex items-center rounded-lg';
+                    container.style.backgroundColor = 'var(--secondary-color)';
+                    
+                    const button = document.createElement('button');
+                    button.textContent = name;
+                    button.className = 'px-4 py-2 text-sm';
+                    button.addEventListener('click', () => loadPrizeTemplate(name));
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = '✕';
+                    deleteBtn.className = 'px-2 py-2 text-sm';
+                    deleteBtn.style.color = 'var(--danger-color)';
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deletePrizeTemplate(name);
+                    });
+                    
+                    container.appendChild(button);
+                    container.appendChild(deleteBtn);
+                    templateButtonsContainer.appendChild(container);
+                }
             };
             
             const handleUrlParams = () => {
@@ -947,25 +1159,43 @@
                     return;
                 }
                 drawButton.disabled = true;
-                winnerDisplay.classList.remove('winner-reveal');
+                winnerDisplay.className = 'winner-display rounded-lg p-4 mb-6 text-4xl md:text-6xl';
                 playTenseMusic();
                 rollingInterval = setInterval(() => {
                     winnerDisplay.textContent = participants[Math.floor(Math.random() * participants.length)];
                 }, 80);
+
                 setTimeout(() => {
                     clearInterval(rollingInterval);
                     stopTenseMusic();
                     const winnerIndex = Math.floor(Math.random() * participants.length);
                     const winner = participants.splice(winnerIndex, 1)[0];
-                    winnerDisplay.textContent = winner;
-                    winnerDisplay.classList.add('winner-reveal');
-                    playWinnerSound();
-                    launchConfetti();
-                    currentPrize.winners.push(winner);
-                    updateParticipantCount();
-                    updateWinnersList();
-                    updatePrizeDisplay(); 
-                    drawButton.disabled = false;
+                    
+                    const selectedEffect = winnerEffectSelect.value;
+                    
+                    const revealWinner = () => {
+                        winnerDisplay.textContent = winner;
+                        if (selectedEffect === 'spotlight') {
+                            winnerDisplay.classList.add('effect-spotlight');
+                        } else {
+                            winnerDisplay.classList.add('winner-reveal');
+                        }
+                        playWinnerSound();
+                        launchConfetti();
+                        currentPrize.winners.push(winner);
+                        updateParticipantCount();
+                        updateWinnersList();
+                        updatePrizeDisplay(); 
+                        drawButton.disabled = false;
+                    };
+
+                    if (selectedEffect === 'marquee') {
+                        winnerDisplay.textContent = winner;
+                        winnerDisplay.classList.add('effect-marquee');
+                        setTimeout(revealWinner, 1200); 
+                    } else {
+                        revealWinner();
+                    }
                 }, 4000);
             };
 
