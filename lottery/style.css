@@ -20,19 +20,20 @@
     --claimed-text: #1a1a1a;
 }
 
+/* === 糖果王國主題（已修改以增強對比度）=== */
 body.theme-candy {
     --bg-color: #fff0f6;
-    --card-bg: rgba(255, 240, 245, 0.8);
-    --text-color: #8b008b;
-    --text-muted-color: #c71585;
-    --primary-color: #ff69b4;
-    --primary-shadow-color: rgba(255, 105, 180, 0.4);
+    --card-bg: rgba(255, 240, 245, 0.85);
+    --text-color: #a13d9d; /* ★ 修改：加深的文字顏色 */
+    --text-muted-color: #b35698; /* ★ 修改：大幅加深的提示文字顏色 */
+    --primary-color: #f75ca9; /* ★ 修改：微調的主按鈕顏色 */
+    --primary-shadow-color: rgba(247, 92, 169, 0.4);
     --secondary-color: #ffe4e1;
     --secondary-hover-color: #ffc0cb;
     --input-bg: #fff5f8;
     --input-border-color: #ffc0cb;
-    --accent-color: #87ceeb;
-    --accent-glow-color: #ff69b4;
+    --accent-color: #64b5f6; /* ★ 修改：更清晰的強調藍色 */
+    --accent-glow-color: #f75ca9;
     --border-color: rgba(255, 105, 180, 0.3);
     --winner-border-color: rgba(255, 105, 180, 0.5);
     --danger-color: #db7093;
@@ -133,3 +134,4 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg-color
 .tab-btn.active { border-color: var(--accent-color); color: var(--accent-color); }
 .toggle-switch-bg:after { background-color: white; }
 input:checked + .toggle-switch-bg { background-color: var(--primary-color); }
+}
