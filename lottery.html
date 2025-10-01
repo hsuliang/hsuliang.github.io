@@ -210,6 +210,12 @@
             border-color: var(--accent-color);
             color: var(--accent-color);
         }
+        .toggle-switch-bg:after {
+            background-color: white;
+        }
+        input:checked + .toggle-switch-bg {
+            background-color: var(--primary-color);
+        }
     </style>
 </head>
 <body class="p-4 pb-16">
@@ -265,7 +271,7 @@
             </div>
             
             <!-- Prize Setup Card -->
-            <div class="card p-8 rounded-lg">
+            <div id="prize-setup-card" class="card p-8 rounded-lg">
                 <h2 class="text-2xl font-bold mb-4" style="color: var(--accent-color);">獎項設定</h2>
                 
                 <div class="mb-4">
@@ -310,6 +316,7 @@
                         <button id="tab-effect" class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg">
                             特效設定
                         </button>
+                         <button id="tab-mode" class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg">模式設定</button>
                     </nav>
                 </div>
 
@@ -343,6 +350,18 @@
                         </select>
                     </div>
                 </div>
+                 <div id="tab-content-mode" class="hidden mt-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex flex-col">
+                            <span class="font-semibold text-lg" style="color: var(--text-color);">啟用單純抽籤模式</span>
+                            <span class="text-sm" style="color: var(--text-muted-color);">將隱藏獎項設定，變為純粹的抽籤工具。</span>
+                        </div>
+                        <label for="simple-draw-toggle" class="inline-flex relative items-center cursor-pointer">
+                            <input type="checkbox" id="simple-draw-toggle" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 toggle-switch-bg peer-checked:bg-red-500"></div>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <!-- Action Buttons -->
@@ -374,7 +393,7 @@
             </div>
              <div id="winners-list-container" class="w-full md:w-[30%] hidden">
                 <div class="card p-6 rounded-lg">
-                    <h3 class="text-xl font-bold text-center mb-4" style="color: var(--accent-color);">🎉 得獎名單 🎉</h3>
+                    <h3 id="winners-list-title" class="text-xl font-bold text-center mb-4" style="color: var(--accent-color);">🎉 得獎名單 🎉</h3>
                     <div id="winners-list" class="space-y-4 text-center text-lg">
                     </div>
                     <button id="export-csv-btn" class="hidden mt-4 btn-secondary w-full py-3 rounded-lg text-xl font-bold">匯出得獎名單</button>
@@ -393,6 +412,12 @@
             <button id="close-modal-btn" class="absolute top-2 right-3 hover:text-white text-3xl leading-none font-bold" style="color: var(--text-muted-color);">&times;</button>
             <h3 class="text-xl font-bold text-center mb-4" style="color: var(--accent-color);">版本更新紀錄</h3>
             <ul class="space-y-4 max-h-[60vh] overflow-y-auto pr-4" style="color: var(--text-color);">
+                <li>
+                    <strong style="color: var(--accent-color);">v2.3.8 (2025-09-30)</strong>
+                    <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
+                        <li>新增「單純抽籤」模式，可透過環境設定開啟，將程式變為純抽籤工具。</li>
+                    </ul>
+                </li>
                 <li>
                     <strong style="color: var(--accent-color);">v2.3.7 (2025-09-30)</strong>
                     <ul class="list-disc list-inside pl-4 mt-1 space-y-1 text-sm">
@@ -754,7 +779,7 @@
     </div>
     
     <footer class="fixed bottom-0 left-0 right-0 p-3 text-center text-xs backdrop-blur-sm" style="color: var(--text-muted-color); background-color: var(--footer-bg);">
-        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v2.3.6</span> |
+        <span id="version-btn" class="cursor-pointer hover:text-white transition-colors">v2.3.7</span> |
         <span>由 Google Gemini 強力驅動</span> |
         <a href="https://bit.ly/Alaing" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">ㄚ亮笑長練功坊</a>
     </footer>
@@ -810,6 +835,10 @@
             const tabEffectBtn = document.getElementById('tab-effect');
             const tabContentEffect = document.getElementById('tab-content-effect');
             const winnerEffectSelect = document.getElementById('winner-effect-select');
+            const tabModeBtn = document.getElementById('tab-mode');
+            const tabContentMode = document.getElementById('tab-content-mode');
+            const simpleDrawToggle = document.getElementById('simple-draw-toggle');
+            const prizeSetupCard = document.getElementById('prize-setup-card');
 
 
             // State
@@ -853,6 +882,7 @@
                 tabThemeBtn.addEventListener('click', () => switchEnvTab('theme'));
                 tabSoundBtn.addEventListener('click', () => switchEnvTab('sound'));
                 tabEffectBtn.addEventListener('click', () => switchEnvTab('effect'));
+                tabModeBtn.addEventListener('click', () => switchEnvTab('mode'));
 
                 titleInput.addEventListener('input', (e) => {
                     const newTitle = e.target.value.trim();
@@ -862,6 +892,8 @@
                 
                 saveTemplateBtn.addEventListener('click', savePrizeTemplate);
                 clearPrizesBtn.addEventListener('click', clearPrizes);
+                simpleDrawToggle.addEventListener('change', handleSimpleDrawToggle);
+
 
                 addPrizeRow('三獎', 3);
                 addPrizeRow('二獎', 2);
@@ -873,6 +905,13 @@
                 switchTab(activeDataSource);
                 switchEnvTab('title');
                 handleUrlParams();
+
+                const savedMode = localStorage.getItem('simpleDrawMode') === 'true';
+                simpleDrawToggle.checked = savedMode;
+                if (savedMode) {
+                    prizeSetupCard.classList.add('hidden');
+                }
+
                 window.addEventListener('resize', () => {
                     if (document.getElementById('finished-prize-name')) {
                         adjustPrizeNameFontSize();
@@ -933,7 +972,8 @@
                     title: { btn: tabTitleBtn, content: tabContentTitle },
                     theme: { btn: tabThemeBtn, content: tabContentTheme },
                     sound: { btn: tabSoundBtn, content: tabContentSound },
-                    effect: { btn: tabEffectBtn, content: tabContentEffect }
+                    effect: { btn: tabEffectBtn, content: tabContentEffect },
+                    mode: { btn: tabModeBtn, content: tabContentMode }
                 };
 
                 Object.values(tabs).forEach(tab => {
@@ -943,6 +983,16 @@
 
                 tabs[tabName].btn.classList.add('active');
                 tabs[tabName].content.classList.remove('hidden');
+            };
+
+             const handleSimpleDrawToggle = (e) => {
+                const isEnabled = e.target.checked;
+                if (isEnabled) {
+                    prizeSetupCard.classList.add('hidden');
+                } else {
+                    prizeSetupCard.classList.remove('hidden');
+                }
+                localStorage.setItem('simpleDrawMode', isEnabled);
             };
 
             const addPrizeRow = (name = '', quantity = 1) => {
@@ -1051,9 +1101,14 @@
 
             const readAndValidatePrizes = () => {
                 prizes = [];
+                const isSimpleMode = simpleDrawToggle.checked;
+                if (isSimpleMode) {
+                    return true;
+                }
+
                 const prizeRows = prizesContainer.querySelectorAll('.prize-row');
                 if (prizeRows.length === 0) {
-                    updateStatus('請至少設定一個獎項！', true); return false;
+                     return true; // No prizes also means simple draw mode now
                 }
                 let totalPrizeQuantity = 0;
                 for (const row of prizeRows) {
@@ -1243,6 +1298,14 @@
                 mainDrawPanel.classList.remove('md:w-[70%]');
                 mainDrawPanel.classList.add('md:w-full');
                 winnersListContainer.classList.add('hidden');
+                
+                const isSimpleMode = simpleDrawToggle.checked;
+                if (isSimpleMode) {
+                    prizes = []; // Ensure prizes are empty
+                    prizes.push({ name: '抽出名單', quantity: participants.length, winners: [] });
+                    mainTitle.textContent = '單純抽籤模式';
+                }
+                
                 updateParticipantCount();
                 updatePrizeDisplay();
             };
@@ -1265,8 +1328,10 @@
             };
 
             const updatePrizeDisplay = () => {
+                const isSimpleMode = simpleDrawToggle.checked;
+
                  if (currentPrizeIndex >= prizes.length) {
-                    currentPrizeDisplay.textContent = '所有獎項已抽完！';
+                    currentPrizeDisplay.textContent = '所有項目已抽完！';
                     drawButton.textContent = '抽獎結束';
                     drawButton.disabled = false;
                     exportCsvBtn.classList.remove('hidden');
@@ -1274,14 +1339,22 @@
                 }
                 const currentPrize = prizes[currentPrizeIndex];
                 const progress = `${currentPrize.winners.length} / ${currentPrize.quantity}`;
-                currentPrizeDisplay.textContent = `正在抽取: ${currentPrize.name} (${progress})`;
+
+                if (isSimpleMode) {
+                    currentPrizeDisplay.textContent = '單純抽籤模式';
+                } else {
+                    currentPrizeDisplay.textContent = `正在抽取: ${currentPrize.name} (${progress})`;
+                }
+
                 if (currentPrize.winners.length >= currentPrize.quantity) {
-                    winnerDisplay.innerHTML = `
+                     if (!isSimpleMode) {
+                        winnerDisplay.innerHTML = `
                         <div class="flex flex-col items-center justify-center leading-tight">
                             <div id="finished-prize-name" class="w-full px-4 text-center whitespace-nowrap" style="font-size: 4rem;">${currentPrize.name}</div>
                             <div class="text-4xl mt-2">已抽完！</div>
                         </div>`;
-                    adjustPrizeNameFontSize();
+                        adjustPrizeNameFontSize();
+                    }
                     
                     const nextPrize = prizes[currentPrizeIndex + 1];
                     drawButton.textContent = nextPrize ? `繼續抽「${nextPrize.name}」` : '抽獎結束';
@@ -1290,14 +1363,19 @@
                        exportCsvBtn.classList.remove('hidden');
                     }
                 } else {
-                    const randomPhrase = buttonPhrases[Math.floor(Math.random() * buttonPhrases.length)];
-                    drawButton.textContent = randomPhrase;
+                    if (isSimpleMode) {
+                        drawButton.textContent = '抽出一位';
+                    } else {
+                        const randomPhrase = buttonPhrases[Math.floor(Math.random() * buttonPhrases.length)];
+                        drawButton.textContent = randomPhrase;
+                    }
                 }
             };
 
             const updateParticipantCount = () => participantCountSpan.textContent = participants.length;
 
             const updateWinnersList = () => {
+                const isSimpleMode = simpleDrawToggle.checked;
                 const hasAnyWinners = prizes.some(p => p.winners.length > 0);
 
                 if (hasAnyWinners) {
@@ -1309,29 +1387,48 @@
                 }
 
                 winnersList.innerHTML = '';
-                prizes.forEach(prize => {
-                    if (prize.winners.length > 0) {
-                        const prizeContainer = document.createElement('div');
-                        prizeContainer.innerHTML = `<h4 class="font-bold text-lg" style="color: var(--accent-color);">${prize.name} (${prize.winners.length}/${prize.quantity})</h4>`;
-                        
-                        const winnerNames = document.createElement('div');
-                        winnerNames.className = 'grid grid-cols-2 gap-x-4 gap-y-2 mt-2 text-base';
-                        
-                        prize.winners.forEach(winner => {
-                             const winnerTag = document.createElement('div');
-                             winnerTag.textContent = winner;
-                             winnerTag.className = 'winner-tag px-2 py-1 rounded-md truncate cursor-pointer transition-colors';
-                             
-                             winnerTag.addEventListener('click', (e) => {
-                                e.currentTarget.classList.toggle('claimed');
-                             });
 
-                             winnerNames.appendChild(winnerTag);
+                if (isSimpleMode) {
+                    document.getElementById('winners-list-title').textContent = '抽出名單';
+                    const winnerNames = document.createElement('div');
+                    winnerNames.className = 'grid grid-cols-2 gap-x-4 gap-y-2 mt-2 text-base';
+                    prizes[0].winners.forEach(winner => {
+                        const winnerTag = document.createElement('div');
+                        winnerTag.textContent = winner;
+                        winnerTag.className = 'winner-tag px-2 py-1 rounded-md truncate cursor-pointer transition-colors';
+                        winnerTag.addEventListener('click', (e) => {
+                            e.currentTarget.classList.toggle('claimed');
                         });
-                        prizeContainer.appendChild(winnerNames);
-                        winnersList.appendChild(prizeContainer);
-                    }
-                });
+                        winnerNames.appendChild(winnerTag);
+                    });
+                    winnersList.appendChild(winnerNames);
+
+                } else {
+                    document.getElementById('winners-list-title').textContent = '🎉 得獎名單 🎉';
+                    prizes.forEach(prize => {
+                        if (prize.winners.length > 0) {
+                            const prizeContainer = document.createElement('div');
+                            prizeContainer.innerHTML = `<h4 class="font-bold text-lg" style="color: var(--accent-color);">${prize.name} (${prize.winners.length}/${prize.quantity})</h4>`;
+                            
+                            const winnerNames = document.createElement('div');
+                            winnerNames.className = 'grid grid-cols-2 gap-x-4 gap-y-2 mt-2 text-base';
+                            
+                            prize.winners.forEach(winner => {
+                                const winnerTag = document.createElement('div');
+                                winnerTag.textContent = winner;
+                                winnerTag.className = 'winner-tag px-2 py-1 rounded-md truncate cursor-pointer transition-colors';
+                                
+                                winnerTag.addEventListener('click', (e) => {
+                                    e.currentTarget.classList.toggle('claimed');
+                                });
+
+                                winnerNames.appendChild(winnerTag);
+                            });
+                            prizeContainer.appendChild(winnerNames);
+                            winnersList.appendChild(prizeContainer);
+                        }
+                    });
+                }
             };
 
             const generateShareLink = () => {
@@ -1368,12 +1465,18 @@
             };
             
             const exportResultsToCsv = () => {
-                let csvContent = '\uFEFF"獎項","得獎人"\n';
+                const isSimpleMode = simpleDrawToggle.checked;
+                let csvContent = isSimpleMode ? '\uFEFF"抽出順序","姓名"\n' : '\uFEFF"獎項","得獎人"\n';
+
                 prizes.forEach(prize => {
-                    prize.winners.forEach(winner => {
+                    prize.winners.forEach((winner, index) => {
                         const winnerEscaped = `"${winner.replace(/"/g, '""')}"`;
-                        const prizeNameEscaped = `"${prize.name.replace(/"/g, '""')}"`;
-                        csvContent += `${prizeNameEscaped},${winnerEscaped}\n`;
+                        if (isSimpleMode) {
+                            csvContent += `${index + 1},${winnerEscaped}\n`;
+                        } else {
+                            const prizeNameEscaped = `"${prize.name.replace(/"/g, '""')}"`;
+                            csvContent += `${prizeNameEscaped},${winnerEscaped}\n`;
+                        }
                     });
                 });
 
@@ -1387,7 +1490,8 @@
                 const mm = String(today.getMonth() + 1).padStart(2, '0');
                 const dd = String(today.getDate()).padStart(2, '0');
                 const dateString = `${yyyy}${mm}${dd}`;
-                const fileName = `居久屋微醺夜摸彩機-得獎名單-${dateString}.csv`;
+                const baseName = isSimpleMode ? '抽出名單' : '得獎名單';
+                const fileName = `居久屋微醺夜摸彩機-${baseName}-${dateString}.csv`;
                 
                 link.setAttribute("download", fileName);
                 link.style.visibility = 'hidden';
@@ -1413,6 +1517,8 @@
                 exportCsvBtn.classList.add('hidden');
                 participantCountSpan.textContent = '0';
                 currentPrizeDisplay.textContent = '';
+                mainTitle.textContent = titleInput.value.trim() || '居久屋微醺夜摸彩機';
+
                 
                 drawButton.textContent = '開始摸彩';
                 drawButton.disabled = false;
