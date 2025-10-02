@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教學平台測驗題目生成器 v6.0 (Server-Proxy)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body{font-family:'Noto Sans TC',sans-serif;background:#f5f3ff;background-image:linear-gradient(to top right,#f5f3ff,#eef2ff)}
+    .loader{border:5px solid #f3f3f3;border-top:5px solid #6366f1;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite}
+    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+    .image-preview-item{position:relative}
+    .remove-image-btn{position:absolute;top:-.5rem;right:-.5rem;background:rgba(0,0,0,.7);color:#fff;border-radius:50%;width:1.5rem;height:1.5rem;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;line-height:1;transition:.2s}
+    .remove-image-btn:hover{background:rgba(239,68,68,.9)}
+    .tab-btn{cursor:pointer;padding:.75rem 1rem;border-bottom:3px solid transparent;transition:.3s;font-weight:500;white-space:nowrap}
+    .tab-btn.active{color:#4f46e5;border-bottom-color:#4f46e5}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+  </style>
+</head>
+<body class="text-gray-800">
+
+  <div class="container mx-auto p-4 md:p-8">
+    <header class="text-center mb-10">
+      <h1 class="text-4xl md:text-5xl font-bold text-indigo-700">教學平台測驗題目生成器</h1>
+      <p class="text-lg text-gray-500 mt-3">v6.0（Server-Proxy）｜金鑰由伺服端保護，使用者無需輸入</p>
+    </header>
+
+    <main class="max-w-4xl mx-auto space-y-8">
+      <!-- Step 0: Provider -->
+      <div class="bg-white p-4 rounded-2xl shadow-lg border border-gray-100">
+        <h2 class="text-2xl font-bold mb-4 text-indigo-600 flex items-center">
+          <span class="bg-indigo-600 text-white rounded-full h-8 w-8 flex items-center justify-center mr-3">🧠</span>選擇 AI 模型
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">AI 模型供應商：</label>
+            <select id="ai-provider-select" class="mt-1 block w-full p-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+              <option value="google" selected>Google Gemini</option>
+              <option value="openai">OpenAI (ChatGPT)</option>
+            </select>
+          </div>
+          <div class="text-sm text-gray-500 flex items-end">伺服端代理已啟用，前端不會接觸 API 金鑰。</div>
+        </div>
+      </div>
+
+      <!-- Step 1: Input -->
+      <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+        <h2 class="text-2xl font-bold mb-5 text-indigo-600 flex items-center">
+          <span class="bg-indigo-600 text-white rounded-full h-8 w-8 flex items-center justify-center mr-3">1</span>提供內容
+        </h2>
+
+        <div class="border-b border-gray-200 mb-6 overflow-x-auto">
+          <nav class="-mb-px flex space-x-2 md:space-x-4" aria-label="Tabs">
+            <button id="tab-paste-text" class="tab-btn active">📋 貼上文字</button>
+            <button id="tab-upload-file" class="tab-btn">📄 上傳檔案</button>
+            <button id="tab-upload-image" class="tab-btn">🖼️ 上傳圖片</button>
+            <button id="tab-ai-generate" class="tab-btn">✨ AI生成內文</button>
+          </nav>
+        </div>
+
+        <!-- paste -->
+        <div id="content-paste-text" class="tab-content active">
+          <label class="block text-sm font-medium text-gray-700 mb-1">貼上文章或教學內容：</label>
+          <textarea id="text-input" rows="8" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="請在此貼上您的教學文字內容..."></textarea>
+          <div class="flex justify-end mt-2">
+            <button id="copy-content-btn" class="bg-indigo-100 text-indigo-700 font-semibold py-2 px-4 rounded-lg hover:bg-indigo-200 transition duration-300 flex items-center text-sm hidden">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+              </svg>
+              複製文章內容
+            </button>
+          </div>
+        </div>
+
+        <!-- file -->
+        <div id="content-upload-file" class="tab-content">
+          <label class="block text-sm font-medium text-gray-700 mb-2">上傳文字檔：</label>
+          <label for="file-input" class="flex flex-col items-center justify-center w-full h-48 px-4 transition bg-white border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50">
+            <span class="font-medium text-gray-600">點擊此處上傳文字檔 <span class="text-indigo-600">或拖曳檔案到這裡</span></span>
+            <p class="text-xs text-gray-500 mt-1">支援 .txt 及 .pdf 格式</p>
+          </label>
+          <input type="file" id="file-input" class="hidden" accept=".txt,.pdf">
+          <p id="file-name-display" class="mt-2 text-sm text-center text-gray-600"></p>
+        </div>
+
+        <!-- image -->
+        <div id="content-upload-image" class="tab-content">
+          <div class="flex items-start gap-2 mb-2">
+            <span class="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700">提示</span>
+            <p class="text-xs text-yellow-700">圖片理解僅支援 <b>Google Gemini</b>。切換為 OpenAI 時會自動清空圖片。</p>
+          </div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">上傳圖片 (支援多張)：</label>
+          <label for="image-input" class="flex flex-col items-center justify-center w-full h-32 px-4 transition bg-white border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50">
+            <span class="font-medium text-gray-600">點擊此處上傳圖片 <span class="text-indigo-600">或拖曳檔案到這裡</span></span>
+            <p class="text-xs text-gray-500 mt-1">支援 .jpg, .png, .gif, .webp（僅 Gemini）</p>
+          </label>
+          <input type="file" id="image-input" class="hidden" accept="image/*" multiple>
+          <div id="image-preview-container" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+        </div>
+
+        <!-- AI generate -->
+        <div id="content-ai-generate" class="tab-content">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">請輸入測驗主題、單字或語詞：</label>
+              <input type="text" id="topic-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="例如：光合作用、永續發展、apple, banana, run...">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">請選擇學生程度 (K12)：</label>
+              <select id="student-level-select" class="w-full p-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="1-2" selected>低年級</option>
+                <option value="3-4">中年級</option>
+                <option value="5-6">高年級</option>
+                <option value="7-9">國中</option>
+                <option value="9-12">高中</option>
+              </select>
+            </div>
+            <button id="generate-content-btn" class="w-full bg-emerald-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition duration-300 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+              生成學習內文
+            </button>
+            <p class="text-xs text-center text-gray-500">AI 會自動將短文填入「貼上文字」。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Options -->
+      <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+        <h2 class="text-2xl font-bold mb-5 text-indigo-600 flex items-center">
+          <span class="bg-indigo-600 text-white rounded-full h-8 w-8 flex items-center justify-center mr-3">2</span>設定選項
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">題目數量：</label>
+            <input type="number" id="num-questions" value="5" min="1" max="50" class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">匯出格式：</label>
+            <select id="format-select" class="mt-1 block w-full p-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 h-[50px]">
+              <option value="" disabled selected>請選擇...</option>
+              <option value="wordwall">Wordwall</option>
+              <option value="kahoot">Kahoot!</option>
+              <option value="wayground">Wayground</option>
+              <option value="loilonote">LoiLoNote</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">題目類型：</label>
+            <select id="question-type-select" class="mt-1 block w-full p-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 h-[50px]">
+              <option value="multiple_choice" selected>選擇題</option>
+              <option value="true_false">是非題</option>
+              <option value="mixed">是非+選擇題</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">題目難度：</label>
+            <select id="difficulty-select" class="mt-1 block w-full p-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 h-[50px]">
+              <option value="中等" selected>中等 (預設)</option>
+              <option value="簡單">簡單</option>
+              <option value="困難">困難</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="mt-8">
+        <button id="generate-and-download-btn" class="w-full bg-indigo-600 text-white font-bold py-4 px-4 rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300 ease-in-out transform hover:-translate-y-1 flex items-center justify-center text-xl shadow-lg hover:shadow-xl hover:shadow-indigo-500/30">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"/></svg>
+          ✨ 一鍵 AI 生成並下載
+        </button>
+      </div>
+    </main>
+
+    <footer class="text-center mt-12 text-sm text-gray-500">
+      <p>v6.0 (Server-Proxy) | <a href="https://bit.ly/Aliang" target="_blank" class="text-indigo-500 hover:underline">丫亮校長練功坊</a></p>
+    </footer>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading-overlay" class="fixed inset-0 bg-gray-800 bg-opacity-60 flex items-center justify-center z-50 hidden">
+    <div class="bg-white p-8 rounded-lg shadow-xl flex flex-col items-center">
+      <div class="loader"></div>
+      <p id="loading-text" class="mt-4 text-lg font-semibold text-gray-700">AI 為您生成中...</p>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-green-500 text-white py-2 px-5 rounded-lg shadow-xl opacity-0 transition-opacity duration-300">
+    <p id="toast-message"></p>
+  </div>
+
+<script>
+  // pdf.js worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+  // DOM
+  const textInput = document.getElementById('text-input');
+  const fileInput = document.getElementById('file-input');
+  const fileNameDisplay = document.getElementById('file-name-display');
+  const imageInput = document.getElementById('image-input');
+  const imagePreviewContainer = document.getElementById('image-preview-container');
+  const numQuestionsInput = document.getElementById('num-questions');
+  const formatSelect = document.getElementById('format-select');
+  const generateAndDownloadBtn = document.getElementById('generate-and-download-btn');
+  const loadingOverlay = document.getElementById('loading-overlay');
+  const loadingText = document.getElementById('loading-text');
+  const toast = document.getElementById('toast');
+  const toastMessage = document.getElementById('toast-message');
+  const questionTypeSelect = document.getElementById('question-type-select');
+  const difficultySelect = document.getElementById('difficulty-select');
+  const tabPasteText = document.getElementById('tab-paste-text');
+  const tabUploadFile = document.getElementById('tab-upload-file');
+  const tabUploadImage = document.getElementById('tab-upload-image');
+  const tabAiGenerate = document.getElementById('tab-ai-generate');
+  const contentPasteText = document.getElementById('content-paste-text');
+  const contentUploadFile = document.getElementById('content-upload-file');
+  const contentUploadImage = document.getElementById('content-upload-image');
+  const contentAiGenerate = document.getElementById('content-ai-generate');
+  const topicInput = document.getElementById('topic-input');
+  const generateContentBtn = document.getElementById('generate-content-btn');
+  const studentLevelSelect = document.getElementById('student-level-select');
+
+  // Tabs
+  const tabs=[tabPasteText,tabUploadFile,tabUploadImage,tabAiGenerate];
+  const contents=[contentPasteText,contentUploadFile,contentUploadImage,contentAiGenerate];
+  tabs.forEach((tab,i)=>tab.addEventListener('click',()=>{
+    tabs.forEach(t=>t.classList.remove('active'));
+    contents.forEach(c=>c.classList.remove('active'));
+    tab.classList.add('active'); contents[i].classList.add('active');
+  }));
+
+  // Toast
+  function showToast(msg, type='success'){
+    toastMessage.textContent = msg;
+    toast.className = `fixed bottom-5 right-5 text-white py-2 px-5 rounded-lg shadow-xl opacity-0 transition-opacity duration-300 ${type==='success'?'bg-green-500':'bg-red-500'}`;
+    toast.classList.remove('opacity-0');
+    setTimeout(()=>toast.classList.add('opacity-0'), 4000);
+  }
+
+  // Default time by difficulty
+  function defaultTimeByDifficulty(d){ return d==='簡單'?20 : d==='困難'?45 : 30; }
+
+  // 正確答案 → 索引陣列
+  function toIndexArray(correctRaw, options){
+    if(Array.isArray(correctRaw)){
+      const out = [];
+      const letters = ['A','B','C','D','E','F','G'];
+      correctRaw.forEach(v=>{
+        if(Number.isInteger(v)) out.push(v>=1? v-1 : v);
+        else if(typeof v==='string'){
+          const s=v.trim(); const L=letters.indexOf(s.toUpperCase());
+          if(L>=0) out.push(L);
+          else {
+            const oi = options.findIndex(opt=>String(opt).trim()===s);
+            if(oi>=0) out.push(oi);
+            const num = parseInt(s,10); if(Number.isInteger(num)) out.push(num>=1?num-1:num);
+          }
+        }
+      });
+      return [...new Set(out)].filter(i=>i>=0 && i<options.length);
+    }
+    if(Number.isInteger(correctRaw)) return [correctRaw>=1?correctRaw-1:correctRaw].filter(i=>i>=0 && i<options.length);
+    if(typeof correctRaw==='string'){
+      const s=correctRaw.trim();
+      if(/[,\uFF0C\u3001]/.test(s)) return toIndexArray(s.split(/[,\uFF0C\u3001]/).map(x=>x.trim()).filter(Boolean), options);
+      const letters = ['A','B','C','D','E','F','G']; const L=letters.indexOf(s.toUpperCase()); if(L>=0) return [L];
+      const oi = options.findIndex(opt=>String(opt).trim()===s); if(oi>=0) return [oi];
+      const num = parseInt(s,10); if(Number.isInteger(num)) return [num>=1?num-1:num].filter(i=>i>=0 && i<options.length);
+    }
+    return [];
+  }
+
+  // 標準化到 MC 結構
+  function normalizeToMC(q, difficulty){
+    // TF → 轉 MC
+    if(q && Object.prototype.hasOwnProperty.call(q,'is_correct')){
+      return {
+        text: q.text ?? q.question ?? q.title ?? q.prompt ?? q.stem ?? '',
+        options: ['是','否'],
+        correct: [q.is_correct ? 0 : 1],
+        time: Number.isFinite(q.time) ? q.time : defaultTimeByDifficulty(difficulty),
+        explanation: q.explanation || q.reason || ''
+      };
+    }
+    // MC 題文本
+    const text = q?.text ?? q?.question ?? q?.title ?? q?.prompt ?? q?.stem ?? '';
+    // 選項
+    let options = [];
+    if(Array.isArray(q?.options)) options = q.options.slice();
+    else if(Array.isArray(q?.choices)) options = q.choices.slice();
+    else if(Array.isArray(q?.answers)) options = q.answers.slice();
+    else if(q?.options && typeof q.options==='object'){ options = Object.keys(q.options).sort().map(k=>q.options[k]); }
+    else if(q?.choices && typeof q.choices==='object'){ options = Object.keys(q.choices).sort().map(k=>q.choices[k]); }
+    options = options.filter(v=>v!==undefined && v!==null).map(v=>String(v));
+    while(options.length < 4) options.push('');
+
+    // 正確答案
+    let correct =
+      toIndexArray(q?.correct, options) ||
+      toIndexArray(q?.correct_index, options) ||
+      toIndexArray(q?.correct_indices, options) ||
+      toIndexArray(q?.correctOption, options) ||
+      toIndexArray(q?.correctOptions, options) ||
+      toIndexArray(q?.answer, options) ||
+      toIndexArray(q?.answers, options) ||
+      [];
+    if(correct.length===0) correct = [0];
+
+    return {
+      text,
+      options,
+      correct,
+      time: Number.isFinite(q?.time) ? q.time : defaultTimeByDifficulty(difficulty),
+      explanation: q?.explanation || q?.reason || ''
+    };
+  }
+
+  // 匯出
+  function exportFile(format, questionType, questions, difficulty){
+    if(!Array.isArray(questions) || questions.length===0){ showToast('沒有可匯出的題目！','error'); return; }
+    const standardMCQs = questions.filter(Boolean).map(q => normalizeToMC(q, difficulty));
+    let data, filename;
+    try{
+      switch(format){
+        case 'wordwall':
+          data = standardMCQs.map(q=>({
+            '問題': q.text || '',
+            '選項1': q.options?.[0] ?? '', '選項2': q.options?.[1] ?? '',
+            '選項3': q.options?.[2] ?? '', '選項4': q.options?.[3] ?? '',
+            '正確選項': (Array.isArray(q.correct)&&q.correct.length>0)? (q.correct[0]+1) : '',
+          }));
+          filename='Wordwall_Quiz.xlsx';
+          break;
+        case 'kahoot': {
+          const kahootData = [
+            ['Kahoot Quiz Template'],
+            ['Add questions, answers, and time limits. Have fun!'],
+            [], [],
+            ['Question','Answer 1','Answer 2','Answer 3','Answer 4','Time limit (sec)','Correct answer(s)']
+          ];
+          standardMCQs.forEach(q=>{
+            const corr = Array.isArray(q.correct)? q.correct : [];
+            kahootData.push([
+              q.text || '',
+              q.options?.[0] ?? '', q.options?.[1] ?? '', q.options?.[2] ?? '', q.options?.[3] ?? '',
+              Number.isFinite(q.time) ? q.time : defaultTimeByDifficulty(difficulty),
+              corr.map(i=>i+1).join(',')
+            ]);
+          });
+          const ws = XLSX.utils.aoa_to_sheet(kahootData);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+          XLSX.writeFile(wb, 'Kahoot_Quiz.xlsx');
+          showToast('Kahoot 檔案已下載！','success');
+          return;
+        }
+        case 'wayground':
+          data = standardMCQs.map(q=>({
+            'Question Text': q.text || '',
+            'Question Type': (Array.isArray(q.correct)&&q.correct.length>1)? 'Checkbox':'Multiple Choice',
+            'Option 1': q.options?.[0] ?? '', 'Option 2': q.options?.[1] ?? '',
+            'Option 3': q.options?.[2] ?? '', 'Option 4': q.options?.[3] ?? '',
+            'Option 5': '',
+            'Correct Answer': (Array.isArray(q.correct)? q.correct:[]).map(i=>i+1).join(','),
+            'Time in seconds': Number.isFinite(q.time) ? q.time : defaultTimeByDifficulty(difficulty),
+            'Image Link': '',
+            'Answer explanation': q.explanation || ''
+          }));
+          filename='Wayground_Quiz.xlsx';
+          break;
+        case 'loilonote':
+          data = standardMCQs.map(q=>({
+            '問題（請勿編輯標題）': q.text || '',
+            '務必作答（若此問題需要回答，請輸入1）': 1,
+            '每題得分（未填入的部分將被自動設為1）': 1,
+            '正確答案的選項（若有複數正確答案選項，請用「、」或「 , 」來分隔選項編號）': (Array.isArray(q.correct)? q.correct:[]).map(i=>i+1).join(','),
+            '說明': q.explanation || '',
+            '選項1': q.options?.[0] ?? '', '選項2': q.options?.[1] ?? '',
+            '選項3': q.options?.[2] ?? '', '選項4': q.options?.[3] ?? '',
+          }));
+          filename='LoiLoNote_Quiz.xlsx';
+          break;
+        default: throw new Error('Unknown format');
+      }
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+      XLSX.writeFile(wb, filename);
+      showToast(`${format.charAt(0).toUpperCase()+format.slice(1)} 檔案已下載！`,'success');
+    }catch(err){
+      console.error('Export failed:', err);
+      showToast('匯出失敗，請檢查主控台錯誤。','error');
+    }
+  }
+
+  // 文字/檔案/圖片處理
+  fileInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) { fileNameDisplay.textContent = ''; return; }
+    fileNameDisplay.textContent = `已選擇檔案：${file.name}`;
+    const reader = new FileReader();
+    if (file.type === 'application/pdf') {
+      reader.onload = async (e) => {
+        const typedarray = new Uint8Array(e.target.result);
+        try {
+          const pdf = await pdfjsLib.getDocument(typedarray).promise;
+          let text = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            let pageText = '';
+            content.items.forEach(item => {
+              pageText += item.str;
+              pageText += item.hasEOL ? '\n' : ' ';
+            });
+            text += pageText.trim() + '\n\n';
+          }
+          textInput.value = text;
+        } catch (error) {
+          console.error("讀取PDF失敗:", error);
+          showToast("無法讀取此PDF檔案。", "error");
+          fileNameDisplay.textContent = '';
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.onload = (e) => { textInput.value = e.target.result; };
+      reader.readAsText(file);
+    }
+  });
+
+  let uploadedImages = [];
+  const aiProviderSelect = document.getElementById('ai-provider-select');
+  imageInput.addEventListener('change', (event) => {
+    const files = event.target.files;
+    if (!files) return;
+    imagePreviewContainer.innerHTML = '';
+    uploadedImages = [];
+    Array.from(files).forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const fullBase64 = e.target.result;
+        const base64Data = fullBase64.split(',')[1];
+        const imageObject = { id: Date.now() + index, type: file.type, data: base64Data };
+        uploadedImages.push(imageObject);
+        const previewWrapper = document.createElement('div');
+        previewWrapper.className = 'image-preview-item';
+        const imgElement = document.createElement('img');
+        imgElement.src = fullBase64;
+        imgElement.className = 'w-full h-32 object-cover rounded-lg shadow-md';
+        const removeBtn = document.createElement('div');
+        removeBtn.className = 'remove-image-btn';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.onclick = () => {
+          uploadedImages = uploadedImages.filter(img => img.id !== imageObject.id);
+          previewWrapper.remove();
+        };
+        previewWrapper.appendChild(imgElement);
+        previewWrapper.appendChild(removeBtn);
+        imagePreviewContainer.appendChild(previewWrapper);
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
+  aiProviderSelect.addEventListener('change', () => {
+    const provider = aiProviderSelect.value;
+    if (provider !== 'google' && uploadedImages.length > 0) {
+      uploadedImages = [];
+      imagePreviewContainer.innerHTML = '';
+      showToast('已切換至非 Gemini，為避免錯誤已清除上傳圖片。', 'error');
+    }
+  });
+
+  // 生成教材短文（呼叫 /api/generate-content）
+  async function generateContentFromTopic() {
+    const topic = topicInput.value;
+    const studentLevel = studentLevelSelect.value;
+    const provider = aiProviderSelect.value;
+
+    if (!topic.trim()) { showToast('請輸入一個主題、單字或語詞！', 'error'); return; }
+
+    loadingOverlay.classList.remove('hidden');
+    loadingText.textContent = 'AI 為您生成內文中...';
+    try {
+      const resp = await fetch('/api/generate-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, topic, studentLevel })
+      });
+      if (!resp.ok) throw new Error((await resp.json()).error || '生成失敗');
+      const data = await resp.json();
+      textInput.value = data.text || '';
+      if (data.text) { showToast('學習內文已成功生成！','success'); }
+    } catch (e) {
+      console.error(e); showToast('生成失敗：' + (e.message||e),'error');
+    } finally {
+      loadingOverlay.classList.add('hidden');
+    }
+  }
+
+  // 主流程（批次）
+  async function handleGenerateAndDownload(){
+    const text = textInput.value;
+    const totalQuestions = parseInt(numQuestionsInput.value,10);
+    const selectedFormat = formatSelect.value;
+    const questionType = questionTypeSelect.value;
+    const difficulty = difficultySelect.value;
+    const provider = aiProviderSelect.value;
+
+    if(!text.trim() && uploadedImages.length===0){ showToast('請先輸入文字、或上傳圖片！','error'); return; }
+    if(uploadedImages.length>0 && provider!=='google'){ showToast('OpenAI 不支援圖片輸入，請改用 Google Gemini 或移除圖片。','error'); return; }
+    if(!selectedFormat){ showToast('請選擇匯出檔案格式！','error'); return; }
+    if(totalQuestions<=0){ showToast('題目數量必須大於 0！','error'); return; }
+
+    loadingOverlay.classList.remove('hidden');
+    loadingText.textContent = 'AI 為您生成題目中...';
+    try{
+      const BATCH_SIZE = 8;
+      const numBatches = Math.ceil(totalQuestions/BATCH_SIZE);
+      let all = [];
+      for(let i=0;i<numBatches;i++){
+        const need = Math.min(BATCH_SIZE, totalQuestions-all.length);
+        const part = await generateSingleBatch(need, questionType, difficulty, text, uploadedImages, selectedFormat);
+        all = all.concat(part||[]);
+      }
+      if(all.length===0) throw new Error('AI 未能生成任何題目。');
+      exportFile(selectedFormat, questionType, all, difficulty);
+    }catch(e){
+      console.error(e); showToast(e.message||'生成失敗','error');
+    }finally{
+      loadingOverlay.classList.add('hidden');
+    }
+  }
+
+  // 呼叫 /api/generate-questions
+  async function generateSingleBatch(questionsInBatch, questionType, difficulty, text, images, selectedFormat){
+    const provider = aiProviderSelect.value;
+    const resp = await fetch('/api/generate-questions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ provider, questionType, difficulty, selectedFormat, questionsInBatch, text, images })
+    });
+    if(!resp.ok) throw new Error((await resp.json()).error||'生成失敗');
+    const data = await resp.json();
+    return data.questions || [];
+  }
+
+  // 綁定
+  document.addEventListener('DOMContentLoaded', ()=>{});
+  generateAndDownloadBtn.addEventListener('click', handleGenerateAndDownload);
+  generateContentBtn.addEventListener('click', generateContentFromTopic);
+</script>
+</body>
+</html>
