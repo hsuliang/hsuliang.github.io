@@ -1,0 +1,13 @@
+# env
+.env
+.env.*
+
+# node
+node_modules
+npm-debug.log*
+
+# vercel
+.vercel
+
+# mac
+.DS_Store
