@@ -63,3 +63,9 @@ input[type="radio"][name="theme"]:checked + label { outline: 3px solid var(--acc
     text-align: center;
 }
 
+/* Language Choice Modal */
+#language-choice-modal-content.open {
+    transform: scale(1);
+    opacity: 1;
+}
+
