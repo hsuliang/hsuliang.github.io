@@ -55,20 +55,32 @@ input.peer:checked + .toggle-bg { background-color: var(--button-bg); }
 .settings-popover { visibility: hidden; opacity: 0; transform: translateY(-10px); transition: all 0.2s ease-in-out; }
 .settings-popover.open { visibility: visible; opacity: 1; transform: translateY(0); }
 .theme-chooser {
-    @apply cursor-pointer h-8 w-8 rounded-full border-2 transition-all;
+    cursor: pointer;
+    height: 2rem;
+    width: 2rem;
+    border-radius: 9999px;
+    border-width: 2px;
+    transition: all 150ms ease-in-out;
 }
-#theme-strawberry + .theme-chooser { background-color: #fff1f2; border-color: #fecdd3; }
-#theme-mint + .theme-chooser { background-color: #f0fdfa; border-color: #99f6e4; }
-#theme-lavender + .theme-chooser { background-color: #f5f3ff; border-color: #ddd6fe; }
-#theme-orange + .theme-chooser { background-color: #fffaf0; border-color: #fde68a; }
-#theme-blueberry + .theme-chooser { background-color: #eff6ff; border-color: #bfdbfe; }
-#theme-caramel-pudding + .theme-chooser { background-color: #fffbeb; border-color: #fcd34d; }
-#theme-burgundy-red + .theme-chooser { background-color: #fce7f3; border-color: #fda4af; }
-input[type="radio"][name="theme"]:checked + .theme-chooser {
+
+label[for="theme-strawberry"] { background-color: #fff1f2; border-color: #fecdd3; }
+label[for="theme-mint"] { background-color: #f0fdfa; border-color: #99f6e4; }
+label[for="theme-lavender"] { background-color: #f5f3ff; border-color: #ddd6fe; }
+label[for="theme-orange"] { background-color: #fffaf0; border-color: #fde68a; }
+label[for="theme-blueberry"] { background-color: #eff6ff; border-color: #bfdbfe; }
+label[for="theme-caramel-pudding"] { background-color: #fffbeb; border-color: #fcd34d; }
+label[for="theme-burgundy-red"] { background-color: #fce7f3; border-color: #fda4af; }
+
+#theme-strawberry:checked ~ #page-wrapper label[for="theme-strawberry"],
+#theme-mint:checked ~ #page-wrapper label[for="theme-mint"],
+#theme-lavender:checked ~ #page-wrapper label[for="theme-lavender"],
+#theme-orange:checked ~ #page-wrapper label[for="theme-orange"],
+#theme-blueberry:checked ~ #page-wrapper label[for="theme-blueberry"],
+#theme-caramel-pudding:checked ~ #page-wrapper label[for="theme-caramel-pudding"],
+#theme-burgundy-red:checked ~ #page-wrapper label[for="theme-burgundy-red"] {
     outline: 3px solid var(--accent-color);
     transform: scale(1.1);
 }
-
 
 /* Visitor Counter */
 #visitor-counter {
@@ -84,5 +96,4 @@ input[type="radio"][name="theme"]:checked + .theme-chooser {
     transform: scale(1);
     opacity: 1;
 }
-
 
