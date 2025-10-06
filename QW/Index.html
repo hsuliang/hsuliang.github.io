@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ㄚ亮笑長的題目生成器 (v7.1)</title>
+    <title>ㄚ亮笑長的題目生成器 (v7.2)</title>
     
     <!-- 引用 Google Fonts 和外部函式庫 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-    <link rel="icon" type="image/jpeg" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEBLAEsAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIbGNtcwIQAABtbnRyUkdCIFhZWiAH4gADABQACQAOAB1hYCNzcTVNGVAAAAABzYXdzYCNybAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWhhbmRhAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABkZXNjAAAAAAAAAB5jcmVhdGVkIGJ5IHNhd3NjcHRybCBUb29sa2l0LiAyLjMAAAAADGN1cnYAAAAAAAAEAAAAAAUACgAPABQAGQAeACMAKAAtADIANwA7AEAARQBKAE8AVABZAF4AYwBoAG0AcgB3AHwAgQCGAIsAkACVAJoAnwCkAKkArgCyALcAvADBAMYAywDQANUA2wDgAOUA6wDwAPYA+wEBAQcBDQETARkBHwElASsBMgE4AT4BRQFMAVIBWQFgAWcBbgF1AXwBgwGLAZwBqQG1AcEByQHRAdkB4QHpAfIB+gIDAgwCFAIdAiYCLwI cuartoAkECSwJUAl0CYwJtAoACjwKgArQCsAK2AsgC3gLwAwYDIwMmMzkDWwNzA3oDhQOLA5YDogOuA7oDxwPTA+AD7AP5BAYEEwQgBC0EOwRIBFUEYwRxBH4EjASaBKgEtgTEBNME4QTwBP4FDQUcBSsFOgVJBVgFZwV3BYYFlgWmBbUFxQXVBeUF9gYGBhYGJwY3BkgGWQZqBnsGjAadBq8GwAbRBuMG9QcHBxkHKwc9B08HYQd0B4YHmQesB78H0gflB/gICwgfCDIIRghaCG4IggiWCKoIvgjSCOcI+wkQCSUJOglPCWQJeQmPCaQJugnPCeUJ+woRCicKPQpUCmoKgQqYCq4KxQrcCvMLCwsiCzkLUQtpC4ALmAuwC8gL4Qv5DBIMKgxDDFwMdQyODKcMwAzZDPMNDQ0mDUANWg10DY4NqQ3DDd4N+A4TDi4OSQ5kDn8Omw62DtIO7g8JDyUPQQ9eD3oPlg+zD88P7BAJECYQQxBhEH4QmxC5ENcQ9RETETERTxFtEYwRqhHJEfASDxMlE0gTow Wilhelmina Triesenberg">
+    <link rel="icon" type="image/jpeg" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEBLAEsAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIbGNtcwIQAABtbnRyUkdCIFhZWiAH4gADABQACQAOAB1hYCNzcTVNGVAAAAABzYXdzYCNybAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWhhbmRhAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABkZXNjAAAAAAAAAB5jcmVhdGVkIGJ5IHNhd3NjcHRybCBU29sa2l0LiAyLjMAAAAADGN1cnYAAAAAAAAEAAAAAAUACgAPABQAGQAeACMAKAAtADIANwA7AEAARQBKAE8AVABZAF4AYwBoAG0AcgB3AHwAgQCGAIsAkACVAJoAnwCkAKkArgCyALcAvADBAMYAywDQANUA2wDgAOUA6wDwAPYA+wEBAQcBDQETARkBHwElASsBMgE4AT4BRQFMAVIBWQFgAWcBbgF1AXwBgwGLAZwBqQG1AcEByQHRAdkB4QHpAfIB+gIDAgwCFAIdAiYCLwI cuartoAkECSwJUAl0CYwJtAoACjwKgArQCsAK2AsgC3gLwAwYDIwMmMzkDWwNzA3oDhQOLA5YDogOuA7oDxwPTA+AD7AP5BAYEEwQgBC0EOwRIBFUEYwRxBH4EjASaBKgEtgTEBNME4QTwBP4FDQUcBSsFOgVJBVgFZwV3BYYFlgWmBbUFxQXVBeUF9gYGBhYGJwY3BkgGWQZqBnsGjAadBq8GwAbRBuMG9QcHBxkHKwc9B08HYQd0B4YHmQesB78H0gflB/gICwgfCDIIRghaCG4IggiWCKoIvgjSCOcI+wkQCSUJOglPCWQJeQmPCaQJugnPCeUJ+woRCicKPQpUCmoKgQqYCq4KxQrcCvMLCwsiCzkLUQtpC4ALmAuwC8gL4Qv5DBIMKgxDDFwMdQyODKcMwAzZDPMNDQ0mDUANWg10DY4NqQ3DDd4N+A4TDi4OSQ5kDn8Omw62DtIO7g8JDyUPQQ9eD3oPlg+zD88P7BAJECYQQxBhEH4QmxC5ENcQ9RETETERTxFtEYwRqhHJEfASDxMlE0gTow Wilhelmina Triesenberg">
     
     <!-- 引用 Tailwind CSS 和我們自己的樣式表 -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -23,6 +23,9 @@
     <input type="radio" name="theme" id="theme-lavender" class="sr-only" checked>
     <input type="radio" name="theme" id="theme-orange" class="sr-only">
     <input type="radio" name="theme" id="theme-blueberry" class="sr-only">
+    <input type="radio" name="theme" id="theme-caramel-pudding" class="sr-only">
+    <input type="radio" name="theme" id="theme-burgundy-red" class="sr-only">
+
 
     <div id="page-wrapper">
         <!-- 主容器 -->
@@ -68,12 +71,14 @@
                                 </div>
                                 <div class="border-t pt-3">
                                     <h4 class="font-bold text-gray-700 mb-3 text-sm">主題切換</h4>
-                                    <div class="grid grid-cols-5 gap-2 mb-4">
+                                    <div class="grid grid-cols-7 gap-2 mb-4">
                                         <label for="theme-strawberry" title="草莓奶昔" class="cursor-pointer h-8 w-8 rounded-full bg-[#fff1f2] border-2 border-rose-200 transition-all"></label>
                                         <label for="theme-mint" title="薄荷蘇打" class="cursor-pointer h-8 w-8 rounded-full bg-[#f0fdfa] border-2 border-teal-200 transition-all"></label>
                                         <label for="theme-lavender" title="薰衣草田" class="cursor-pointer h-8 w-8 rounded-full bg-[#f5f3ff] border-2 border-violet-200 transition-all"></label>
                                         <label for="theme-orange" title="夏日香橙" class="cursor-pointer h-8 w-8 rounded-full bg-[#fffaf0] border-2 border-amber-200 transition-all"></label>
                                         <label for="theme-blueberry" title="藍莓鬆餅" class="cursor-pointer h-8 w-8 rounded-full bg-[#eff6ff] border-2 border-blue-200 transition-all"></label>
+                                        <label for="theme-caramel-pudding" title="焦糖布丁" class="cursor-pointer h-8 w-8 rounded-full bg-[#fffbeb] border-2 border-amber-300 transition-all"></label>
+                                        <label for="theme-burgundy-red" title="勃根地紅" class="cursor-pointer h-8 w-8 rounded-full bg-[#f4e9e9] border-2 border-red-900 transition-all"></label>
                                     </div>
                                     <h4 class="font-bold text-gray-700 mb-2 text-sm">版面配置</h4>
                                     <button id="layout-toggle-btn" class="w-full flex items-center justify-center text-sm text-gray-600 font-semibold bg-gray-100 hover:bg-gray-200 p-2 rounded-lg transition-colors">
@@ -256,7 +261,7 @@
 
             <!-- 頁腳 -->
             <footer class="text-center mt-12 text-sm text-gray-500">
-                <p><span id="version-btn" class="cursor-pointer hover:underline">v7.1 優化版</span> | 由 Google Gemini 強力驅動 | <a href="https://bit.ly/Aliang" target="_blank" class="themed-accent-text themed-accent-text-hover">ㄚ亮笑長練功坊</a> | <a href="https://gemini.google.com/share/684396634923" target="_blank" class="themed-accent-text themed-accent-text-hover">程式簡介與使用說明</a></p>
+                <p><span id="version-btn" class="cursor-pointer hover:underline">v7.2 主題更新</span> | 由 Google Gemini 強力驅動 | <a href="https://bit.ly/Aliang" target="_blank" class="themed-accent-text themed-accent-text-hover">ㄚ亮笑長練功坊</a> | <a href="https://gemini.google.com/share/684396634923" target="_blank" class="themed-accent-text themed-accent-text-hover">程式簡介與使用說明</a></p>
             </footer>
         </div>
         
