@@ -677,11 +677,19 @@ function removeRealtimeListeners() {
 function populateVersionHistory() {
     if (!versionHistoryContent) return;
     const versionHistory = [
-        { 
-            version: "v7.1 優化版",
+         { 
+            version: "v7.2 主題更新",
             current: true,
             notes: [
+                "【🎨 主題擴充】",
+                " - 新增「焦糖布丁」與「勃根地紅」兩款主題。",
+            ]
+        },
+        { 
+            version: "v7.1 優化版",
+            notes: [
                 "【✨ UI優化與修正】",
+                " - 修正：修復了大部分按鈕與連結無法點擊的問題。",
                 " - 修正：修正了AI生成內容後，題目生成時的載入動畫未正確顯示的問題。",
                 " - 優化：為「輸入內容」和「上傳圖片」頁籤加上圖示，提升識別度。",
             ]
