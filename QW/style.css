@@ -27,7 +27,7 @@ body { font-family: 'Noto Sans TC', sans-serif; }
 .themed-button-danger-text:hover { color: var(--danger-color); }
 .tab-btn.active { color: var(--heading-color); border-bottom-color: var(--heading-color); }
 .option-radio:checked { border-color: var(--heading-color); background-color: var(--heading-color); }
-.toggle-bg.peer-checked { background-color: var(--button-bg); }
+input.peer:checked + .toggle-bg { background-color: var(--button-bg); }
 
 
 /* --- CUSTOM STYLES & LAYOUT --- */
@@ -84,4 +84,5 @@ input[type="radio"][name="theme"]:checked + .theme-chooser {
     transform: scale(1);
     opacity: 1;
 }
+
 
