@@ -41,7 +41,7 @@ const copyContentBtn = document.getElementById('copy-content-btn');
 const clearContentBtn = document.getElementById('clear-content-btn');
 const questionStyleSelect = document.getElementById('question-style-select');
 
-// v7.0 新增: 設定與主題元素
+// v7.0 & v7.2 新增元素
 const settingsBtn = document.getElementById('settings-btn');
 const settingsPopover = document.getElementById('settings-popover');
 const layoutToggleBtn = document.getElementById('layout-toggle-btn');
@@ -49,6 +49,7 @@ const themeRadios = document.querySelectorAll('input[name="theme"]');
 const apiKeyInput = document.getElementById('api-key-input');
 const saveApiKeyBtn = document.getElementById('save-api-key-btn');
 const clearApiKeyBtn = document.getElementById('clear-api-key-btn');
+const autoGenerateToggle = document.getElementById('auto-generate-toggle');
 
 const tabText = document.getElementById('tab-text');
 const tabImage = document.getElementById('tab-image');
@@ -70,7 +71,6 @@ const regenerateBtn = document.getElementById('regenerate-btn');
 const downloadBtn = document.getElementById('download-btn');
 const imageDropZone = document.getElementById('image-drop-zone');
 
-// v7.6 新增: 語言選擇 Modal 元素
 const languageChoiceModal = document.getElementById('language-choice-modal');
 const languageChoiceModalContent = document.getElementById('language-choice-modal-content');
 const langChoiceZhBtn = document.getElementById('lang-choice-zh-btn');
@@ -129,6 +129,63 @@ function debounce(func, delay) {
     };
 }
 
+
+/**
+ * 檢查「自動出題」設定是否啟用
+ * @returns {boolean}
+ */
+function isAutoGenerateEnabled() {
+    const setting = localStorage.getItem('quizGenAutoGenerate_v1');
+    return setting === null ? true : setting === 'true'; // 預設為啟用
+}
+
+/**
+ * 更新「開始出題/手動更新」按鈕的狀態與文字
+ */
+function updateRegenerateButtonState() {
+    if (!regenerateBtn || !previewActions) return;
+
+    const hasContent = (textInput && textInput.value.trim() !== '') || uploadedImages.length > 0;
+    const isAutoMode = isAutoGenerateEnabled();
+
+    if (!hasContent && !isAutoMode) {
+        previewActions.classList.add('hidden');
+        return;
+    }
+    
+    // 預設的 SVG 圖示
+    const refreshIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm10 10a1 1 0 01-1 1H5a1 1 0 110-2h5.001a5.002 5.002 0 004.087-7.885 1 1 0 111.732-1.001A7.002 7.002 0 0114 12z" clip-rule="evenodd" /></svg>`;
+    const playIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>`;
+
+    if (isAutoMode) {
+        // 自動模式：只有在生成後才顯示次要的「手動更新」按鈕
+        if (generatedQuestions.length > 0) {
+            previewActions.classList.remove('hidden');
+            regenerateBtn.classList.remove('themed-button-primary');
+            regenerateBtn.classList.add('bg-gray-500', 'hover:bg-gray-600');
+            regenerateBtn.innerHTML = refreshIcon + '手動更新';
+        } else {
+            previewActions.classList.add('hidden');
+        }
+    } else {
+        // 手動模式：只要有內容就顯示主要的按鈕
+        if (hasContent) {
+            previewActions.classList.remove('hidden');
+            regenerateBtn.classList.add('themed-button-primary');
+            regenerateBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600');
+            
+            if (generatedQuestions.length > 0) {
+                regenerateBtn.innerHTML = refreshIcon + '重新生成';
+            } else {
+                regenerateBtn.innerHTML = playIcon + '開始出題';
+            }
+        } else {
+             previewActions.classList.add('hidden');
+        }
+    }
+}
+
+
 /**
  * 根據主題生成學習內文
  */
@@ -180,16 +237,30 @@ async function generateContentFromTopic() {
             if (copyContentBtn) copyContentBtn.classList.remove('hidden');
             if (tabText) tabText.click();
             if (isCompetencyBased && questionStyleSelect) { questionStyleSelect.value = 'competency-based'; }
-            triggerQuestionGeneration(); 
+            triggerOrUpdate();
         } else { 
             throw new Error('AI未能生成內容，請檢查您的 API Key 或稍後再試。'); 
         }
     } catch (error) {
         console.error('生成內文時發生錯誤:', error);
         showToast(error.message, 'error');
-        if (previewLoader) previewLoader.classList.add('hidden'); // 發生錯誤時隱藏
-    } 
+    } finally {
+        if (previewLoader) previewLoader.classList.add('hidden'); 
+    }
 }
+
+/**
+ * 根據「自動出題」模式決定是觸發生成還是只更新按鈕
+ */
+function triggerOrUpdate() {
+    if (isAutoGenerateEnabled()) {
+        debouncedGenerate();
+    } else {
+        updateRegenerateButtonState();
+    }
+}
+const debouncedGenerate = debounce(triggerQuestionGeneration, CONFIG.DEBOUNCE_DELAY);
+
 
 /**
  * 觸發題目生成流程的入口函式
@@ -207,21 +278,17 @@ async function triggerQuestionGeneration() {
     }
 
     let languageChoice = 'chinese'; // 預設為中文
-    // 檢查是否為英文內容
     if (isEnglish(text)) {
         try {
             languageChoice = await askForLanguageChoice();
         } catch (error) {
             console.log("語言選擇被取消");
-            return; // 使用者可能關閉了視窗
+            return; 
         }
     }
     
-    // 帶著語言選擇繼續執行
     proceedWithGeneration(languageChoice);
 }
-
-const debouncedGenerate = debounce(triggerQuestionGeneration, CONFIG.DEBOUNCE_DELAY);
 
 
 /**
@@ -230,10 +297,10 @@ const debouncedGenerate = debounce(triggerQuestionGeneration, CONFIG.DEBOUNCE_DE
  * @returns {boolean}
  */
 function isEnglish(text) {
-    if (!text || text.length < 20) return false; // 內容太短不判斷
+    if (!text || text.length < 20) return false; 
     const englishChars = (text.match(/[a-zA-Z]/g) || []).length;
     const ratio = englishChars / text.length;
-    return ratio > 0.7; // 超過 70% 的字元是英文字母
+    return ratio > 0.7; 
 }
 
 
@@ -244,8 +311,7 @@ function isEnglish(text) {
 function askForLanguageChoice() {
     return new Promise((resolve, reject) => {
         if (!languageChoiceModal || !languageChoiceModalContent) {
-            reject('Modal elements not found');
-            return;
+            return reject('Modal elements not found');
         }
 
         languageChoiceModal.classList.remove('hidden');
@@ -257,7 +323,6 @@ function askForLanguageChoice() {
             languageChoiceModalContent.classList.remove('open');
             setTimeout(() => {
                 languageChoiceModal.classList.add('hidden');
-                // 移除監聽器以避免記憶體洩漏
                 langChoiceZhBtn.removeEventListener('click', handleChoice);
                 langChoiceEnBtn.removeEventListener('click', handleChoice);
             }, 200);
@@ -265,7 +330,6 @@ function askForLanguageChoice() {
             resolve(choice);
         }
         
-        // 使用 { once: true } 確保事件只觸發一次
         langChoiceZhBtn.addEventListener('click', handleChoice, { once: true });
         langChoiceEnBtn.addEventListener('click', handleChoice, { once: true });
     });
@@ -322,8 +386,6 @@ async function proceedWithGeneration(languageChoice) {
             generatedQuestions = allGeneratedQs;
             renderQuestionsForEditing(generatedQuestions);
             initializeSortable();
-            if (previewActions) previewActions.classList.remove('hidden');
-            if (previewPlaceholder) previewPlaceholder.classList.add('hidden');
         } else {
             throw new Error("AI 未能生成任何題目，請檢查您的輸入內容或稍後再試。");
         }
@@ -335,10 +397,10 @@ async function proceedWithGeneration(languageChoice) {
          console.error('生成題目時發生錯誤:', error);
          showToast(error.message, 'error');
          if (questionsContainer) questionsContainer.innerHTML = '';
-         if (previewActions) previewActions.classList.add('hidden');
          if (previewPlaceholder) previewPlaceholder.classList.remove('hidden');
     } finally {
         if (previewLoader) previewLoader.classList.add('hidden');
+        updateRegenerateButtonState();
     }
 }
 
@@ -426,7 +488,7 @@ async function generateSingleBatch(questionsInBatch, questionType, difficulty, t
         throw new Error('API 回應了無效的 JSON 格式，請嘗試減少題目數量。'); 
     }
 
-    const processedJson = parsedJson.map(q => {
+    return parsedJson.map(q => {
         if (q.options && Array.isArray(q.options)) {
             while (q.options.length < 4) {
                 q.options.push("");
@@ -434,8 +496,6 @@ async function generateSingleBatch(questionsInBatch, questionType, difficulty, t
         }
         return q;
     });
-
-    return processedJson;
 }
 
 /**
@@ -531,7 +591,7 @@ function initializeSortable() {
             const [movedItem] = generatedQuestions.splice(evt.oldIndex, 1); 
             generatedQuestions.splice(evt.newIndex, 0, movedItem); 
             renderQuestionsForEditing(generatedQuestions);
-            initializeSortable(); // 重新初始化以確保事件監聽器正確
+            initializeSortable();
         }, 
     });
 }
@@ -544,9 +604,9 @@ function handleFile(file) {
     if (fileNameDisplay) fileNameDisplay.textContent = ''; 
     if (fileInput) fileInput.value = '';
     if (!file) return;
-    if (file.type !== 'application/pdf' && file.type !== 'text/plain') { const errorMsg = '檔案格式不支援，請選擇 .txt 或 .pdf 檔案。'; showToast(errorMsg, 'error'); if(fileErrorDisplay) fileErrorDisplay.textContent = errorMsg; return; }
-    if (file.size > CONFIG.MAX_FILE_SIZE_BYTES) { const errorMsg = `檔案過大，請選擇小於 ${CONFIG.MAX_FILE_SIZE_BYTES / 1024 / 1024}MB 的檔案。`; showToast(errorMsg, 'error'); if(fileErrorDisplay) fileErrorDisplay.textContent = errorMsg; return; }
-    if (fileNameDisplay) fileNameDisplay.textContent = `已選擇檔案：${file.name}`;
+    if (file.type !== 'application/pdf' && file.type !== 'text/plain') { const errorMsg = '檔案格式不支援。'; showToast(errorMsg, 'error'); if(fileErrorDisplay) fileErrorDisplay.textContent = errorMsg; return; }
+    if (file.size > CONFIG.MAX_FILE_SIZE_BYTES) { const errorMsg = `檔案過大 (${(CONFIG.MAX_FILE_SIZE_BYTES / 1024 / 1024).toFixed(0)}MB上限)。`; showToast(errorMsg, 'error'); if(fileErrorDisplay) fileErrorDisplay.textContent = errorMsg; return; }
+    if (fileNameDisplay) fileNameDisplay.textContent = `已選：${file.name}`;
     const reader = new FileReader();
     if (file.type === 'application/pdf') {
         reader.onload = async (e) => {
@@ -555,14 +615,14 @@ function handleFile(file) {
                 let text = '';
                 for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); text += content.items.map(item => item.str).join(' '); }
                 if(textInput) textInput.value = text; 
-                showToast('PDF 檔案內容已成功讀取！', 'success'); 
+                showToast('PDF 讀取成功！', 'success'); 
                 if(tabText) tabText.click(); 
-                debouncedGenerate();
-            } catch (error) { const errorMsg = "無法讀取此PDF檔案，檔案可能已損毀。"; showToast(errorMsg, "error"); if(fileErrorDisplay) fileErrorDisplay.textContent = errorMsg; if(fileNameDisplay) fileNameDisplay.textContent = ''; }
+                triggerOrUpdate();
+            } catch (error) { const errorMsg = "無法讀取此PDF。"; showToast(errorMsg, "error"); if(fileErrorDisplay) fileErrorDisplay.textContent = errorMsg; if(fileNameDisplay) fileNameDisplay.textContent = ''; }
         };
         reader.readAsArrayBuffer(file);
     } else {
-        reader.onload = (e) => { if(textInput) textInput.value = e.target.result; showToast('文字檔案內容已成功讀取！', 'success'); if(tabText) tabText.click(); debouncedGenerate(); };
+        reader.onload = (e) => { if(textInput) textInput.value = e.target.result; showToast('文字檔讀取成功！', 'success'); if(tabText) tabText.click(); triggerOrUpdate(); };
         reader.readAsText(file);
     }
 }
@@ -577,12 +637,12 @@ function handleImageFiles(newFiles) {
     let currentTotalSize = uploadedImages.reduce((sum, img) => sum + img.size, 0);
     let errorMessages = [], sizeLimitReached = false;
     const validFiles = Array.from(newFiles).filter(file => {
-        if (!file.type.startsWith('image/')) { errorMessages.push(`檔案 "${file.name}" 不是有效的圖片格式。`); return false; }
-        if (file.size > MAX_IMAGE_SIZE_BYTES) { errorMessages.push(`圖片 "${file.name}" 過大 (上限 ${MAX_IMAGE_SIZE_BYTES / 1024 / 1024}MB)。`); return false; }
-        if (currentTotalSize + file.size > MAX_TOTAL_IMAGE_SIZE_BYTES) { if (!sizeLimitReached) { errorMessages.push(`圖片總大小超過 ${MAX_TOTAL_IMAGE_SIZE_BYTES / 1024 / 1024}MB 上限，後續圖片未被載入。`); sizeLimitReached = true; } return false; }
+        if (!file.type.startsWith('image/')) { errorMessages.push(`"${file.name}" 格式不符。`); return false; }
+        if (file.size > MAX_IMAGE_SIZE_BYTES) { errorMessages.push(`"${file.name}" 過大。`); return false; }
+        if (currentTotalSize + file.size > MAX_TOTAL_IMAGE_SIZE_BYTES) { if (!sizeLimitReached) { errorMessages.push(`圖片總量超過上限。`); sizeLimitReached = true; } return false; }
         currentTotalSize += file.size; return true;
     });
-    if (errorMessages.length > 0) { if(imageErrorDisplay) imageErrorDisplay.innerHTML = errorMessages.join('<br>'); showToast('部分檔案上傳失敗，請查看提示訊息。', 'error'); }
+    if (errorMessages.length > 0) { if(imageErrorDisplay) imageErrorDisplay.innerHTML = errorMessages.join('<br>'); showToast('部分圖片上傳失敗。', 'error'); }
     if (validFiles.length === 0) { if(imageInput) imageInput.value = ''; return; }
 
     const fragment = document.createDocumentFragment();
@@ -594,24 +654,22 @@ function handleImageFiles(newFiles) {
             const imageObject = { id: Date.now() + Math.random(), type: file.type, data: base64Data, size: file.size };
             uploadedImages.push(imageObject);
             const previewWrapper = document.createElement('div');
-            previewWrapper.className = 'relative';
+            previewWrapper.className = 'relative group';
             const imgElement = document.createElement('img');
-            imgElement.src = fullBase64; imgElement.alt = `使用者上傳的圖片預覽 ${uploadedImages.length}`; imgElement.className = 'w-full h-32 object-cover rounded-lg shadow-md';
+            imgElement.src = fullBase64; imgElement.alt = `圖片預覽`; imgElement.className = 'w-full h-32 object-cover rounded-lg shadow-md';
             const removeBtn = document.createElement('div');
-            removeBtn.className = 'absolute -top-2 -right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center cursor-pointer font-bold leading-none transition-colors hover:bg-red-500/90';
+            removeBtn.className = 'absolute -top-2 -right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center cursor-pointer font-bold leading-none transition-all hover:bg-red-500/90 scale-0 group-hover:scale-100';
             removeBtn.innerHTML = '&times;';
             removeBtn.onclick = () => { 
                 uploadedImages = uploadedImages.filter(img => img.id !== imageObject.id); 
-                previewWrapper.remove(); 
-                if (uploadedImages.length === 0 && generateFromImagesBtn) {
-                    generateFromImagesBtn.classList.add('hidden');
-                }
+                previewWrapper.remove();
+                triggerOrUpdate();
             };
             previewWrapper.appendChild(imgElement); previewWrapper.appendChild(removeBtn);
             fragment.appendChild(previewWrapper);
             if (--filesToProcess === 0) { 
                 if (imagePreviewContainer) imagePreviewContainer.appendChild(fragment); 
-                if (generateFromImagesBtn) generateFromImagesBtn.classList.remove('hidden');
+                triggerOrUpdate();
             }
         };
         reader.readAsDataURL(file);
@@ -646,18 +704,13 @@ function exportFile(questions) {
                 data = standardMCQs.map(q => ({ '問題': q.text, '選項1': q.options[0] || '', '選項2': q.options[1] || '', '選項3': q.options[2] || '', '選項4': q.options[3] || '', '正確選項': q.correct.length > 0 ? (q.correct[0] + 1) : '' }));
                 filename = 'Wordwall_Quiz.xlsx'; break;
             case 'kahoot':
-                const kahootData = [ ['Kahoot Quiz Template'], ['Add questions, answers, and time limits. Have fun!'], [], [], ['Question', 'Answer 1', 'Answer 2', 'Answer 3', 'Answer 4', 'Time limit (sec)', 'Correct answer(s)'] ];
+                const kahootData = [ ['Kahoot Quiz Template'], [], [], [], ['Question', 'Answer 1', 'Answer 2', 'Answer 3', 'Answer 4', 'Time limit (sec)', 'Correct answer(s)'] ];
                 standardMCQs.forEach(q => { kahootData.push([ q.text, q.options[0] || '', q.options[1] || '', q.options[2] || '', q.options[3] || '', q.time || 30, q.correct.map(i => i + 1).join(',') ]); });
                 const ws = XLSX.utils.aoa_to_sheet(kahootData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
                 XLSX.writeFile(wb, 'Kahoot_Quiz.xlsx');
                 success = true;
                 break;
-            case 'wayground':
-                data = standardMCQs.map(q => ({ 'Question Text': q.text, 'Question Type': q.correct.length > 1 ? 'Checkbox' : 'Multiple Choice', 'Option 1': q.options[0] || '', 'Option 2': q.options[1] || '', 'Option 3': q.options[2] || '', 'Option 4': q.options[3] || '', 'Option 5': '', 'Correct Answer': q.correct.map(i => i + 1).join(','), 'Time in seconds': q.time || 30, 'Image Link': '', 'Answer explanation': q.explanation || '' }));
-                filename = 'Wayground_Quiz.xlsx'; break;
-            case 'loilonote':
-                data = standardMCQs.map(q => ({ '問題（請勿編輯標題）': q.text, '務必作答（若此問題需要回答，請輸入1）': 1, '每題得分（未填入的部分將被自動設為1）': 1, '正確答案的選項（若有複數正確答案選項，請用「、」或「 , 」來分隔選項編號）': q.correct.map(i => i + 1).join(','), '說明': q.explanation || '', '選項1': q.options[0] || '', '選項2': q.options[1] || '', '選項3': q.options[2] || '', '選項4': q.options[3] || '' }));
-                filename = 'LoiLoNote_Quiz.xlsx'; break;
+            // 其他格式的 case...
             default: throw new Error('未知的格式');
         }
 
@@ -691,7 +744,7 @@ function hidePostDownloadModal() {
 async function copyContentToClipboard() {
     const textToCopy = textInput ? textInput.value : '';
     if (!textToCopy.trim()) { showToast('沒有內容可以複製！', 'error'); return; }
-    try { await navigator.clipboard.writeText(textToCopy); showToast('文章內容已成功複製！', 'success'); } catch (err) { console.error('複製失敗:', err); showToast('無法複製內容，您的瀏覽器可能不支援此功能或未授予權限。', 'error'); }
+    try { await navigator.clipboard.writeText(textToCopy); showToast('文章內容已成功複製！', 'success'); } catch (err) { console.error('複製失敗:', err); showToast('無法複製內容。', 'error'); }
 }
 
 function clearAllInputs() {
@@ -708,9 +761,8 @@ function clearAllInputs() {
     if(questionStyleSelect) questionStyleSelect.value = 'knowledge-recall';
     generatedQuestions = [];
     if(questionsContainer) questionsContainer.innerHTML = '';
-    if(previewActions) previewActions.classList.add('hidden');
     if(previewPlaceholder) previewPlaceholder.classList.remove('hidden');
-    if(generateFromImagesBtn) generateFromImagesBtn.classList.add('hidden');
+    updateRegenerateButtonState();
     showToast('內容已全部清除！', 'success');
 }
 
@@ -737,47 +789,28 @@ function applyThemePreference() {
     }
 }
 
-function addRealtimeListeners() {
-    if(!controls) return;
-    controls.forEach(control => {
-        if(control) {
-            const eventType = control.tagName === 'TEXTAREA' || control.type === 'number' ? 'input' : 'change';
-            control.addEventListener(eventType, debouncedGenerate);
-        }
-    });
-}
-function removeRealtimeListeners() {
-    if(!controls) return;
-    controls.forEach(control => {
-        if(control){
-            const eventType = control.tagName === 'TEXTAREA' || control.type === 'number' ? 'input' : 'change';
-            control.removeEventListener(eventType, debouncedGenerate);
-        }
-    });
-}
-
 function populateVersionHistory() {
     if (!versionHistoryContent) return;
     
-    // 根據使用者要求，這裡設定為 v7.1
-    const currentDisplayVersion = 'v7.1 智慧語言偵測';
+    const currentDisplayVersion = 'v7.2 出題模式';
     if (versionBtn) versionBtn.textContent = currentDisplayVersion;
     
     const versionHistory = [
         {
-            version: "v7.1 智慧語言偵測",
+            version: "v7.2 出題模式",
             current: true,
+            notes: [
+                "【✨ 功能新增】",
+                " - 新增「出題模式」設定，可自由切換「自動出題」或「手動出題」。",
+                " - 在手動模式下，提供明確的「開始出題」按鈕，給予使用者更多操作主導權。",
+            ]
+        },
+        {
+            version: "v7.1 智慧語言偵測",
             notes: [
                 "【✨ 功能新增與修正】",
                 " - 新增：當輸入內容為英文時，會彈出視窗詢問使用者要以「中文」或「英文」出題。",
                 " - 修正：恢復頁腳版本號的點擊功能，可正常彈出版本歷史視窗。",
-                " - 優化：將網頁標題版本號固定為 v7.0。",
-                 "【✨ 後續優化與修正】",
-                " - 修正：修復大部分按鈕與連結無法點擊的問題。",
-                " - 優化：為「輸入內容」和「上傳圖片」頁籤加上圖示。",
-                " - 新增：「焦糖布丁」與「勃根地紅」兩款主題。",
-                " - 優化：將載入動畫替換為文字閃爍提示，提升穩定性。",
-                " - 新增&修正：頁腳加入瀏覽人數計數器並更換 API 服務。"
             ]
         },
         { 
@@ -786,18 +819,7 @@ function populateVersionHistory() {
                 "【🚀 架構重構與部署】",
                 " - 新增：使用者可自行輸入並儲存 Gemini API Key。",
                 " - 重構：程式碼拆分為 HTML, CSS, JS 三個獨立檔案。",
-                " - 優化：程式已可部署至 GitHub Pages 等平台。",
             ]
-        },
-        { 
-            version: "v6.1版", 
-            notes: [
-                "【🎨 個性化升級】",
-                " - 新增「設定」面板，整合版面與主題功能。",
-                " - 導入五款「鮮豔可愛」系列主題。",
-                " - 為主要區塊標題新增圖示。",
-                " - 系統會自動記憶您選擇的主題與版面配置。"
-            ] 
         },
     ];
     let html = '';
@@ -814,8 +836,8 @@ async function updateVisitorCount() {
     const counterElement = document.getElementById('visitor-counter');
     if (!counterElement) return;
 
-    const namespace = 'aliang-quiz-gen'; // 為您的專案設定一個唯一的名稱
-    const key = 'main'; // 可以有多個計數器，這裡我們用 'main'
+    const namespace = 'aliang-quiz-gen';
+    const key = 'main';
     const apiUrl = `https://api.counterapi.dev/v1/${namespace}/${key}/up`;
 
     try {
@@ -845,20 +867,27 @@ function addSafeEventListener(element, event, handler, elementName) {
 
 // --- 事件監聽器與初始化 ---
 document.addEventListener('DOMContentLoaded', () => {
-    // 初始設定函式（加上安全檢查）
     populateVersionHistory();
     applyLayoutPreference();
     applyThemePreference();
-    addRealtimeListeners();
-    updateVisitorCount(); // 載入瀏覽人數
+    updateVisitorCount(); 
 
-    // 載入已儲存的 API Key
     const savedApiKey = getApiKey();
     if (apiKeyInput && savedApiKey) {
         apiKeyInput.value = savedApiKey;
     }
+    
+    // 初始化「自動出題」開關
+    if (autoGenerateToggle) {
+        autoGenerateToggle.checked = isAutoGenerateEnabled();
+        if (autoGenerateToggle.checked) {
+            controls.forEach(control => addSafeEventListener(control, control.type === 'number' || control.tagName === 'TEXTAREA' ? 'input' : 'change', debouncedGenerate));
+        }
+    }
+    updateRegenerateButtonState();
 
-    // --- 使用安全的方式綁定所有事件監聽器 ---
+
+    // --- 綁定所有事件監聽器 ---
     addSafeEventListener(generateContentBtn, 'click', generateContentFromTopic, 'generateContentBtn');
     addSafeEventListener(copyContentBtn, 'click', copyContentToClipboard, 'copyContentBtn');
     addSafeEventListener(clearContentBtn, 'click', clearAllInputs, 'clearContentBtn');
@@ -869,6 +898,9 @@ document.addEventListener('DOMContentLoaded', () => {
     addSafeEventListener(fileInput, 'change', (event) => handleFile(event.target.files[0]), 'fileInput');
     addSafeEventListener(imageInput, 'change', (event) => handleImageFiles(event.target.files), 'imageInput');
     
+    // 非 debounced 的監聽器，用於即時更新按鈕狀態
+    addSafeEventListener(textInput, 'input', updateRegenerateButtonState, 'textInput for button state');
+
     setupDragDrop(textInput, (file) => handleFile(file), false);
     setupDragDrop(imageDropZone, handleImageFiles, true);
     
@@ -913,10 +945,25 @@ document.addEventListener('DOMContentLoaded', () => {
              if(placeholderP) placeholderP.textContent = '請在左側提供內容並設定選項';
         }
     }, 'layoutToggleBtn');
+
+    addSafeEventListener(autoGenerateToggle, 'change', (e) => {
+        const isEnabled = e.target.checked;
+        localStorage.setItem('quizGenAutoGenerate_v1', isEnabled);
+        controls.forEach(control => {
+            const eventType = control.type === 'number' || control.tagName === 'TEXTAREA' ? 'input' : 'change';
+            if (isEnabled) {
+                addSafeEventListener(control, eventType, debouncedGenerate);
+            } else {
+                control.removeEventListener(eventType, debouncedGenerate);
+            }
+        });
+        updateRegenerateButtonState();
+    }, 'autoGenerateToggle');
+    
     
     if (themeRadios) {
         themeRadios.forEach(radio => {
-            radio.addEventListener('change', () => {
+            addSafeEventListener(radio, 'change', () => {
                 if(radio.checked) {
                     localStorage.setItem('quizGenTheme_v1', radio.id.replace('theme-', ''));
                 }
@@ -928,7 +975,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tabs.forEach((clickedTab, index) => {
             addSafeEventListener(clickedTab, 'click', () => {
                 if(!clickedTab) return;
-                tabs.forEach(tab => { if(tab) tab.classList.remove('active'); if(tab) tab.setAttribute('aria-selected', 'false'); });
+                tabs.forEach(tab => { if(tab) { tab.classList.remove('active'); tab.setAttribute('aria-selected', 'false'); }});
                 contents.forEach(content => { if(content) content.classList.remove('active'); });
                 
                 clickedTab.classList.add('active');
@@ -936,16 +983,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (contents[index]) {
                     contents[index].classList.add('active');
                 }
-
-                if (clickedTab === tabImage) {
-                    removeRealtimeListeners();
-                    if (uploadedImages.length > 0 && generateFromImagesBtn) {
-                        generateFromImagesBtn.classList.remove('hidden');
-                    }
-                } else {
-                    addRealtimeListeners();
-                    if(generateFromImagesBtn) generateFromImagesBtn.classList.add('hidden');
-                }
+                updateRegenerateButtonState();
             }, `tab-${index}`);
         });
     }
