@@ -27,6 +27,8 @@ body { font-family: 'Noto Sans TC', sans-serif; }
 .themed-button-danger-text:hover { color: var(--danger-color); }
 .tab-btn.active { color: var(--heading-color); border-bottom-color: var(--heading-color); }
 .option-radio:checked { border-color: var(--heading-color); background-color: var(--heading-color); }
+.toggle-bg.peer-checked { background-color: var(--button-bg); }
+
 
 /* --- CUSTOM STYLES & LAYOUT --- */
 @keyframes pulse {
@@ -52,7 +54,21 @@ body { font-family: 'Noto Sans TC', sans-serif; }
 /* Settings Popover */
 .settings-popover { visibility: hidden; opacity: 0; transform: translateY(-10px); transition: all 0.2s ease-in-out; }
 .settings-popover.open { visibility: visible; opacity: 1; transform: translateY(0); }
-input[type="radio"][name="theme"]:checked + label { outline: 3px solid var(--accent-color); transform: scale(1.05); }
+.theme-chooser {
+    @apply cursor-pointer h-8 w-8 rounded-full border-2 transition-all;
+}
+#theme-strawberry + .theme-chooser { background-color: #fff1f2; border-color: #fecdd3; }
+#theme-mint + .theme-chooser { background-color: #f0fdfa; border-color: #99f6e4; }
+#theme-lavender + .theme-chooser { background-color: #f5f3ff; border-color: #ddd6fe; }
+#theme-orange + .theme-chooser { background-color: #fffaf0; border-color: #fde68a; }
+#theme-blueberry + .theme-chooser { background-color: #eff6ff; border-color: #bfdbfe; }
+#theme-caramel-pudding + .theme-chooser { background-color: #fffbeb; border-color: #fcd34d; }
+#theme-burgundy-red + .theme-chooser { background-color: #fce7f3; border-color: #fda4af; }
+input[type="radio"][name="theme"]:checked + .theme-chooser {
+    outline: 3px solid var(--accent-color);
+    transform: scale(1.1);
+}
+
 
 /* Visitor Counter */
 #visitor-counter {
