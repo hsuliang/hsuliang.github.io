@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ㄚ亮笑長的題目生成器 (v7.0)</title>
+    <title>ㄚ亮笑長的題目生成器 (v7.1)</title>
     
     <!-- 引用 Google Fonts 和外部函式庫 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -89,8 +89,14 @@
                             <div class="border-b border-gray-200 mb-6">
                                 <div class="tabs-container">
                                     <nav class="-mb-px flex space-x-2 md:space-x-4" aria-label="Tabs" role="tablist">
-                                        <button id="tab-text" class="tab-btn active" role="tab" aria-selected="true" aria-controls="content-text">輸入/貼上內容</button>
-                                        <button id="tab-image" class="tab-btn" role="tab" aria-selected="false" aria-controls="content-image">上傳圖片</button>
+                                        <button id="tab-text" class="tab-btn active flex items-center" role="tab" aria-selected="true" aria-controls="content-text">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                                            輸入內容
+                                        </button>
+                                        <button id="tab-image" class="tab-btn flex items-center" role="tab" aria-selected="false" aria-controls="content-image">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" /></svg>
+                                            上傳圖片
+                                        </button>
                                         <button id="tab-ai" class="tab-btn" role="tab" aria-selected="false" aria-controls="content-ai">✨ AI生成內容</button>
                                     </nav>
                                 </div>
@@ -250,7 +256,7 @@
 
             <!-- 頁腳 -->
             <footer class="text-center mt-12 text-sm text-gray-500">
-                <p><span id="version-btn" class="cursor-pointer hover:underline">v7.0 可部署版</span> | 由 Google Gemini 強力驅動 | <a href="https://bit.ly/Aliang" target="_blank" class="themed-accent-text themed-accent-text-hover">ㄚ亮笑長練功坊</a> | <a href="https://gemini.google.com/share/684396634923" target="_blank" class="themed-accent-text themed-accent-text-hover">程式簡介與使用說明</a></p>
+                <p><span id="version-btn" class="cursor-pointer hover:underline">v7.1 優化版</span> | 由 Google Gemini 強力驅動 | <a href="https://bit.ly/Aliang" target="_blank" class="themed-accent-text themed-accent-text-hover">ㄚ亮笑長練功坊</a> | <a href="https://gemini.google.com/share/684396634923" target="_blank" class="themed-accent-text themed-accent-text-hover">程式簡介與使用說明</a></p>
             </footer>
         </div>
         
