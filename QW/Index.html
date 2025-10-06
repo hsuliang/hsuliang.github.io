@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ㄚ亮笑長的題目生成器 (v7.1)</title>
+    <title>ㄚ亮笑長的題目生成器 (v7.0)</title>
     
     <!-- 引用 Google Fonts 和外部函式庫 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -65,29 +65,42 @@
                                         Gemini API 金鑰設定
                                         <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs themed-accent-text themed-accent-text-hover font-normal underline">(申請連結)</a>
                                     </h4>
-                                    <p class="text-xs text-gray-500 mb-2">請在此貼上您的 API Key 以啟用生成功能。</p>
                                     <input type="password" id="api-key-input" class="w-full p-2 border border-gray-300 rounded-md text-sm" placeholder="請貼上您的 API Key">
                                     <div class="flex gap-2 mt-2">
                                         <button id="save-api-key-btn" class="flex-1 text-sm text-white font-semibold bg-blue-500 hover:bg-blue-600 p-2 rounded-lg transition-colors">儲存</button>
                                         <button id="clear-api-key-btn" class="flex-1 text-sm text-gray-600 font-semibold bg-gray-200 hover:bg-gray-300 p-2 rounded-lg transition-colors">清除</button>
                                     </div>
                                 </div>
-                                <div class="border-t pt-3">
-                                    <h4 class="font-bold text-gray-700 mb-3 text-sm">主題切換</h4>
-                                    <div class="grid grid-cols-7 gap-2 mb-4">
-                                        <label for="theme-strawberry" title="草莓奶昔" class="cursor-pointer h-8 w-8 rounded-full bg-[#fff1f2] border-2 border-rose-200 transition-all"></label>
-                                        <label for="theme-mint" title="薄荷蘇打" class="cursor-pointer h-8 w-8 rounded-full bg-[#f0fdfa] border-2 border-teal-200 transition-all"></label>
-                                        <label for="theme-lavender" title="薰衣草田" class="cursor-pointer h-8 w-8 rounded-full bg-[#f5f3ff] border-2 border-violet-200 transition-all"></label>
-                                        <label for="theme-orange" title="夏日香橙" class="cursor-pointer h-8 w-8 rounded-full bg-[#fffaf0] border-2 border-amber-200 transition-all"></label>
-                                        <label for="theme-blueberry" title="藍莓鬆餅" class="cursor-pointer h-8 w-8 rounded-full bg-[#eff6ff] border-2 border-blue-200 transition-all"></label>
-                                        <label for="theme-caramel-pudding" title="焦糖布丁" class="cursor-pointer h-8 w-8 rounded-full bg-[#fffbeb] border-2 border-amber-300 transition-all"></label>
-                                        <label for="theme-burgundy-red" title="勃根地紅" class="cursor-pointer h-8 w-8 rounded-full bg-[#f4e9e9] border-2 border-red-900 transition-all"></label>
+                                <div class="border-t pt-3 space-y-3">
+                                    <div>
+                                        <h4 class="font-bold text-gray-700 mb-2 text-sm">出題模式</h4>
+                                        <div class="flex items-center justify-between bg-gray-100 p-2 rounded-lg">
+                                            <label for="auto-generate-toggle" class="text-sm text-gray-600 font-semibold cursor-pointer select-none">啟用自動出題</label>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="auto-generate-toggle" class="sr-only peer">
+                                                <div class="toggle-bg w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                                            </label>
+                                        </div>
                                     </div>
-                                    <h4 class="font-bold text-gray-700 mb-2 text-sm">版面配置</h4>
-                                    <button id="layout-toggle-btn" class="w-full flex items-center justify-center text-sm text-gray-600 font-semibold bg-gray-100 hover:bg-gray-200 p-2 rounded-lg transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
-                                        切換左右欄
-                                    </button>
+                                    <div>
+                                        <h4 class="font-bold text-gray-700 mb-2 text-sm">主題切換</h4>
+                                        <div class="grid grid-cols-7 gap-2">
+                                            <label for="theme-strawberry" title="草莓奶昔" class="theme-chooser"></label>
+                                            <label for="theme-mint" title="薄荷蘇打" class="theme-chooser"></label>
+                                            <label for="theme-lavender" title="薰衣草田" class="theme-chooser"></label>
+                                            <label for="theme-orange" title="夏日香橙" class="theme-chooser"></label>
+                                            <label for="theme-blueberry" title="藍莓鬆餅" class="theme-chooser"></label>
+                                            <label for="theme-caramel-pudding" title="焦糖布丁" class="theme-chooser"></label>
+                                            <label for="theme-burgundy-red" title="勃根地紅" class="theme-chooser"></label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-gray-700 mb-2 text-sm">版面配置</h4>
+                                        <button id="layout-toggle-btn" class="w-full flex items-center justify-center text-sm text-gray-600 font-semibold bg-gray-100 hover:bg-gray-200 p-2 rounded-lg transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                                            切換左右欄
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -264,7 +277,7 @@
             <!-- 頁腳 -->
             <footer class="text-center mt-12 text-sm text-gray-500">
                 <p>
-                    <span id="version-btn" class="cursor-pointer hover:underline">v7.1 智慧語言偵測</span> | 
+                    <span id="version-btn" class="cursor-pointer hover:underline">v7.2 出題模式</span> | 
                     由 Google Gemini 強力驅動 | 
                     <a href="https://bit.ly/Aliang" target="_blank" class="themed-accent-text themed-accent-text-hover">ㄚ亮笑長練功坊</a> | 
                     <a href="https://gemini.google.com/share/684396634923" target="_blank" class="themed-accent-text themed-accent-text-hover">程式簡介與使用說明</a> |
