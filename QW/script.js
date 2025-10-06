@@ -679,8 +679,16 @@ function populateVersionHistory() {
     if (!versionHistoryContent) return;
     const versionHistory = [
         {
-            version: "v7.0 可部署版 (含後續更新)",
+            version: "v7.5 穩定版",
             current: true,
+            notes: [
+                "【✨ 功能新增與修正】",
+                " - 新增：頁腳加入瀏覽人數計數器。",
+                " - 修正：更換失效的計數器 API 服務。",
+            ]
+        },
+        {
+            version: "v7.0 可部署版 (含後續更新)",
             notes: [
                 "【🚀 架構重構與部署】",
                 " - 新增：使用者可自行輸入並儲存 Gemini API Key。",
@@ -691,7 +699,6 @@ function populateVersionHistory() {
                 " - 優化：為「輸入內容」和「上傳圖片」頁籤加上圖示。",
                 " - 新增：「焦糖布丁」與「勃根地紅」兩款主題。",
                 " - 優化：將載入動畫替換為文字閃爍提示，提升穩定性。",
-                " - 新增：頁腳加入瀏覽人數計數器。"
             ]
         },
         { 
@@ -721,16 +728,16 @@ async function updateVisitorCount() {
 
     const namespace = 'aliang-quiz-gen'; // 為您的專案設定一個唯一的名稱
     const key = 'main'; // 可以有多個計數器，這裡我們用 'main'
-    const apiUrl = `https://api.countapi.xyz/hit/${namespace}/${key}`;
+    const apiUrl = `https://api.counterapi.dev/v1/${namespace}/${key}/up`;
 
     try {
         const response = await fetch(apiUrl);
         if (!response.ok) throw new Error('計數器服務回應錯誤');
         
         const data = await response.json();
-        if (data.value) {
+        if (data.count) {
             // 使用 toLocaleString() 來加上千分位，例如 1,234
-            counterElement.textContent = data.value.toLocaleString();
+            counterElement.textContent = data.count.toLocaleString();
         }
     } catch (error) {
         console.error('無法載入瀏覽人數:', error);
