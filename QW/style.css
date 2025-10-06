@@ -63,13 +63,13 @@ input.peer:checked + .toggle-bg { background-color: var(--button-bg); }
     transition: all 150ms ease-in-out;
 }
 
-label[for="theme-strawberry"] { background-color: #fff1f2; border-color: #fecdd3; }
-label[for="theme-mint"] { background-color: #f0fdfa; border-color: #99f6e4; }
-label[for="theme-lavender"] { background-color: #f5f3ff; border-color: #ddd6fe; }
-label[for="theme-orange"] { background-color: #fffaf0; border-color: #fde68a; }
-label[for="theme-blueberry"] { background-color: #eff6ff; border-color: #bfdbfe; }
-label[for="theme-caramel-pudding"] { background-color: #fffbeb; border-color: #fcd34d; }
-label[for="theme-burgundy-red"] { background-color: #fce7f3; border-color: #fda4af; }
+label.theme-chooser[for="theme-strawberry"] { background-color: #fff1f2; border-color: #fecdd3; }
+label.theme-chooser[for="theme-mint"] { background-color: #f0fdfa; border-color: #99f6e4; }
+label.theme-chooser[for="theme-lavender"] { background-color: #f5f3ff; border-color: #ddd6fe; }
+label.theme-chooser[for="theme-orange"] { background-color: #fffaf0; border-color: #fde68a; }
+label.theme-chooser[for="theme-blueberry"] { background-color: #eff6ff; border-color: #bfdbfe; }
+label.theme-chooser[for="theme-caramel-pudding"] { background-color: #fffbeb; border-color: #fcd34d; }
+label.theme-chooser[for="theme-burgundy-red"] { background-color: #fce7f3; border-color: #fda4af; }
 
 #theme-strawberry:checked ~ #page-wrapper label[for="theme-strawberry"],
 #theme-mint:checked ~ #page-wrapper label[for="theme-mint"],
