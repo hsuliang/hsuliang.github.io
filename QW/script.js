@@ -679,20 +679,19 @@ function populateVersionHistory() {
     if (!versionHistoryContent) return;
     const versionHistory = [
         {
-            version: "v7.0 可部署版",
+            version: "v7.0 可部署版 (含後續更新)",
             current: true,
             notes: [
-                "【✨ 視覺優化】",
-                " - 將圓形載入動畫替換為文字閃爍提示，提升穩定性。",
-                "【🎨 主題擴充】",
-                " - 新增「焦糖布丁」與「勃根地紅」兩款主題。",
-                "【✨ UI優化與修正】",
-                " - 修正：修復大部分按鈕與連結無法點擊的問題。",
-                " - 優化：為「輸入內容」和「上傳圖片」頁籤加上圖示。",
                 "【🚀 架構重構與部署】",
                 " - 新增：使用者可自行輸入並儲存 Gemini API Key。",
                 " - 重構：程式碼拆分為 HTML, CSS, JS 三個獨立檔案。",
-                " - 優化：程式已可部署至 GitHub Pages 等平台。"
+                " - 優化：程式已可部署至 GitHub Pages 等平台。",
+                "【✨ 後續優化與修正】",
+                " - 修正：修復大部分按鈕與連結無法點擊的問題。",
+                " - 優化：為「輸入內容」和「上傳圖片」頁籤加上圖示。",
+                " - 新增：「焦糖布丁」與「勃根地紅」兩款主題。",
+                " - 優化：將載入動畫替換為文字閃爍提示，提升穩定性。",
+                " - 新增：頁腳加入瀏覽人數計數器。"
             ]
         },
         { 
@@ -700,8 +699,8 @@ function populateVersionHistory() {
             notes: [
                 "【🎨 個性化升級】",
                 " - 新增「設定」面板，整合版面與主題功能。",
-                " - 導入五款「鮮豔可愛」系列主題，可隨心切換介面色彩。",
-                " - 為主要區塊標題新增圖示，提升視覺識別度。",
+                " - 導入五款「鮮豔可愛」系列主題。",
+                " - 為主要區塊標題新增圖示。",
                 " - 系統會自動記憶您選擇的主題與版面配置。"
             ] 
         },
@@ -714,11 +713,34 @@ function populateVersionHistory() {
 }
 
 /**
- * 安全地為一個元素新增事件監聽器，如果元素不存在則在主控台印出錯誤
- * @param {Element} element - DOM 元素
- * @param {string} event - 事件名稱
- * @param {Function} handler - 事件處理函式
- * @param {string} elementName - (可選) 元素的名稱，用於錯誤訊息
+ * 更新並顯示瀏覽人數計數器
+ */
+async function updateVisitorCount() {
+    const counterElement = document.getElementById('visitor-counter');
+    if (!counterElement) return;
+
+    const namespace = 'aliang-quiz-gen'; // 為您的專案設定一個唯一的名稱
+    const key = 'main'; // 可以有多個計數器，這裡我們用 'main'
+    const apiUrl = `https://api.countapi.xyz/hit/${namespace}/${key}`;
+
+    try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error('計數器服務回應錯誤');
+        
+        const data = await response.json();
+        if (data.value) {
+            // 使用 toLocaleString() 來加上千分位，例如 1,234
+            counterElement.textContent = data.value.toLocaleString();
+        }
+    } catch (error) {
+        console.error('無法載入瀏覽人數:', error);
+        // 如果載入失敗，維持顯示 '---'
+    }
+}
+
+
+/**
+ * 安全地為一個元素新增事件監聽器
  */
 function addSafeEventListener(element, event, handler, elementName) {
     if (element) {
@@ -735,6 +757,7 @@ document.addEventListener('DOMContentLoaded', () => {
     applyLayoutPreference();
     applyThemePreference();
     addRealtimeListeners();
+    updateVisitorCount(); // 載入瀏覽人數
 
     // 載入已儲存的 API Key
     const savedApiKey = getApiKey();
