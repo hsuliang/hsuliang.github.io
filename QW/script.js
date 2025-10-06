@@ -70,6 +70,13 @@ const regenerateBtn = document.getElementById('regenerate-btn');
 const downloadBtn = document.getElementById('download-btn');
 const imageDropZone = document.getElementById('image-drop-zone');
 
+// v7.6 新增: 語言選擇 Modal 元素
+const languageChoiceModal = document.getElementById('language-choice-modal');
+const languageChoiceModalContent = document.getElementById('language-choice-modal-content');
+const langChoiceZhBtn = document.getElementById('lang-choice-zh-btn');
+const langChoiceEnBtn = document.getElementById('lang-choice-en-btn');
+
+
 const tabs = [tabText, tabImage, tabAi];
 const contents = [contentText, contentImage, contentAi];
 const controls = [textInput, numQuestionsInput, questionTypeSelect, difficultySelect, questionStyleSelect];
@@ -173,7 +180,6 @@ async function generateContentFromTopic() {
             if (copyContentBtn) copyContentBtn.classList.remove('hidden');
             if (tabText) tabText.click();
             if (isCompetencyBased && questionStyleSelect) { questionStyleSelect.value = 'competency-based'; }
-            // 觸發題目生成，但不要在這裡隱藏動畫
             triggerQuestionGeneration(); 
         } else { 
             throw new Error('AI未能生成內容，請檢查您的 API Key 或稍後再試。'); 
@@ -183,32 +189,94 @@ async function generateContentFromTopic() {
         showToast(error.message, 'error');
         if (previewLoader) previewLoader.classList.add('hidden'); // 發生錯誤時隱藏
     } 
-    // 注意：成功時，動畫會由 handleGenerateQuestions 控制
 }
 
 /**
- * 觸發題目生成的主要函式
+ * 觸發題目生成流程的入口函式
  */
-function triggerQuestionGeneration() {
+async function triggerQuestionGeneration() {
     if (tabImage && tabImage.classList.contains('active') && uploadedImages.length === 0) {
-         return showToast('請先上傳圖片！', 'error');
+        return showToast('請先上傳圖片！', 'error');
     }
-    
+
     const text = textInput ? textInput.value : '';
-    if (!text.trim() && uploadedImages.length === 0) return; 
+    if (!text.trim() && uploadedImages.length === 0) return;
 
     if (previewPlaceholder && !previewPlaceholder.classList.contains('hidden')) {
         previewPlaceholder.classList.add('hidden');
     }
-    handleGenerateQuestions();
+
+    let languageChoice = 'chinese'; // 預設為中文
+    // 檢查是否為英文內容
+    if (isEnglish(text)) {
+        try {
+            languageChoice = await askForLanguageChoice();
+        } catch (error) {
+            console.log("語言選擇被取消");
+            return; // 使用者可能關閉了視窗
+        }
+    }
+    
+    // 帶著語言選擇繼續執行
+    proceedWithGeneration(languageChoice);
 }
 
 const debouncedGenerate = debounce(triggerQuestionGeneration, CONFIG.DEBOUNCE_DELAY);
 
+
+/**
+ * 檢查文字是否主要為英文
+ * @param {string} text - 要檢查的文字
+ * @returns {boolean}
+ */
+function isEnglish(text) {
+    if (!text || text.length < 20) return false; // 內容太短不判斷
+    const englishChars = (text.match(/[a-zA-Z]/g) || []).length;
+    const ratio = englishChars / text.length;
+    return ratio > 0.7; // 超過 70% 的字元是英文字母
+}
+
+
+/**
+ * 彈出視窗詢問使用者要用何種語言出題
+ * @returns {Promise<string>} - 回傳 'chinese' 或 'english'
+ */
+function askForLanguageChoice() {
+    return new Promise((resolve, reject) => {
+        if (!languageChoiceModal || !languageChoiceModalContent) {
+            reject('Modal elements not found');
+            return;
+        }
+
+        languageChoiceModal.classList.remove('hidden');
+        setTimeout(() => languageChoiceModalContent.classList.add('open'), 10);
+
+        function handleChoice(event) {
+            const choice = event.target.id === 'lang-choice-en-btn' ? 'english' : 'chinese';
+            
+            languageChoiceModalContent.classList.remove('open');
+            setTimeout(() => {
+                languageChoiceModal.classList.add('hidden');
+                // 移除監聽器以避免記憶體洩漏
+                langChoiceZhBtn.removeEventListener('click', handleChoice);
+                langChoiceEnBtn.removeEventListener('click', handleChoice);
+            }, 200);
+            
+            resolve(choice);
+        }
+        
+        // 使用 { once: true } 確保事件只觸發一次
+        langChoiceZhBtn.addEventListener('click', handleChoice, { once: true });
+        langChoiceEnBtn.addEventListener('click', handleChoice, { once: true });
+    });
+}
+
+
 /**
  * 處理題目生成的流程，包含分批呼叫 API
+ * @param {string} languageChoice - 'chinese' 或 'english'
  */
-async function handleGenerateQuestions() {
+async function proceedWithGeneration(languageChoice) {
     const apiKey = getApiKey();
     if (!apiKey) {
         return showToast('請先在右上角「設定」中輸入您的 Gemini API Key！', 'error');
@@ -246,7 +314,7 @@ async function handleGenerateQuestions() {
         for (let i = 0; i < numBatches; i++) {
             const questionsInBatch = Math.min(BATCH_SIZE, totalQuestions - allGeneratedQs.length);
             if (questionsInBatch <= 0) break;
-            const batchResult = await generateSingleBatch(questionsInBatch, questionType, difficulty, text, uploadedImages, questionStyle, signal);
+            const batchResult = await generateSingleBatch(questionsInBatch, questionType, difficulty, text, uploadedImages, questionStyle, signal, languageChoice);
             allGeneratedQs = allGeneratedQs.concat(batchResult);
         }
         
@@ -276,20 +344,33 @@ async function handleGenerateQuestions() {
 
 /**
  * 產生單一批次的題目
+ * @param {string} languageChoice - 'chinese' 或 'english'
  */
-async function generateSingleBatch(questionsInBatch, questionType, difficulty, text, images, questionStyle, signal) {
+async function generateSingleBatch(questionsInBatch, questionType, difficulty, text, images, questionStyle, signal, languageChoice) {
     const apiKey = getApiKey();
     const apiUrl = `${CONFIG.API_URL}${apiKey}`;
     const selectedFormat = formatSelect ? formatSelect.value : '';
     const needsExplanation = selectedFormat === 'loilonote' || selectedFormat === 'wayground';
     
-    const baseIntro = "你是一位協助國中小老師出題的專家。請根據使用者提供的文本和圖片，";
-    const baseFormatRequirement = "你必須嚴格遵守JSON格式。";
-    let competencyPromptPart = `你的任務是生成「素養導向型」的題目，這代表你需要混合設計出能夠評量學生「情境理解」、「分析應用」與「批判思辨」這三種能力的題目。請避免只考記憶的題目。`;
-    if (questionStyle === 'competency-based') {
-         competencyPromptPart += ` 針對每一題，你還必須提供一個名為 'design_concept' 的欄位，用20-40字的繁體中文簡要說明該題的「設計理念」，解釋它旨在評量何種素養能力（例如：情境理解、分析應用、批判思辨）。`;
-    }
-    const buildPrompt = (coreTask) => questionStyle === 'competency-based' ? `${baseIntro} ${competencyPromptPart} ${coreTask} ${baseFormatRequirement}` : `${baseIntro} ${coreTask} ${baseFormatRequirement}`;
+    const buildPrompt = (coreTask) => {
+        const baseIntro = "你是一位協助國中小老師出題的專家。請根據使用者提供的文本和圖片，";
+        const baseFormatRequirement = "你必須嚴格遵守JSON格式。";
+        let competencyPromptPart = `你的任務是生成「素養導向型」的題目，這代表你需要混合設計出能夠評量學生「情境理解」、「分析應用」與「批判思辨」這三種能力的題目。請避免只考記憶的題目。`;
+        
+        if (questionStyle === 'competency-based') {
+             competencyPromptPart += ` 針對每一題，你還必須提供一個名為 'design_concept' 的欄位，用20-40字的繁體中文簡要說明該題的「設計理念」，解釋它旨在評量何種素養能力（例如：情境理解、分析應用、批判思辨）。`;
+        }
+
+        const langInstruction = languageChoice === 'english'
+            ? 'All generated content, including questions, options, and explanations, must be in English.'
+            : '所有生成的內容，包含題目、選項、解析，都必須是繁體中文。';
+
+        const finalPrompt = questionStyle === 'competency-based'
+            ? `${baseIntro} ${competencyPromptPart} ${coreTask} ${langInstruction} ${baseFormatRequirement}`
+            : `${baseIntro} ${coreTask} ${langInstruction} ${baseFormatRequirement}`;
+        
+        return finalPrompt;
+    };
     
     let jsonSchema;
     const mcProperties = { text: { type: "STRING" }, options: { type: "ARRAY", items: { type: "STRING" } }, correct: { type: "ARRAY", items: { type: "INTEGER" } }, time: { type: "INTEGER", "default": 30 } };
@@ -309,8 +390,8 @@ async function generateSingleBatch(questionsInBatch, questionType, difficulty, t
             jsonSchema = { type: "ARRAY", items: { type: "OBJECT", properties: tfProperties, required: tfRequired }};
             break;
         case 'mixed':
-             coreTask = `生成${questionsInBatch}題${difficulty}難度的「選擇題」與「是非題」混合題組。是非題請用 ["是", "否"] 作為選項，選擇題請提供4個選項。每題都必須有清楚標示的正確答案（索引值從0開始）。`;
-             if(needsExplanation){ coreTask = `生成${questionsInBatch}題${difficulty}難度的「選擇題」與「是非題」混合題組。是非題請用 ["是", "否"] 作為選項，選擇題請提供4個選項。每題都必須有清楚標示的正確答案（索引值從0開始），並針對正確答案提供簡短的說明(explanation)。`; }
+             coreTask = `生成${questionsInBatch}題${difficulty}難度的「選擇題」與「是非題」混合題組。是非題請用 ["是", "否"] 或 ["True", "False"] 作為選項，選擇題請提供4個選項。每題都必須有清楚標示的正確答案（索引值從0開始）。`;
+             if(needsExplanation){ coreTask = `生成${questionsInBatch}題${difficulty}難度的「選擇題」與「是非題」混合題組。是非題請用 ["是", "否"] 或 ["True", "False"] 作為選項，選擇題請提供4個選項。每題都必須有清楚標示的正確答案（索引值從0開始），並針對正確答案提供簡短的說明(explanation)。`; }
              jsonSchema = { type: "ARRAY", items: { type: "OBJECT", properties: mcProperties, required: mcRequired }};
             break;
         case 'multiple_choice':
@@ -677,28 +758,35 @@ function removeRealtimeListeners() {
 
 function populateVersionHistory() {
     if (!versionHistoryContent) return;
+    
+    // 根據使用者要求，這裡設定為 v7.1
+    const currentDisplayVersion = 'v7.1 智慧語言偵測';
+    if (versionBtn) versionBtn.textContent = currentDisplayVersion;
+    
     const versionHistory = [
         {
-            version: "v7.5 穩定版",
+            version: "v7.1 智慧語言偵測",
             current: true,
             notes: [
                 "【✨ 功能新增與修正】",
-                " - 新增：頁腳加入瀏覽人數計數器。",
-                " - 修正：更換失效的計數器 API 服務。",
+                " - 新增：當輸入內容為英文時，會彈出視窗詢問使用者要以「中文」或「英文」出題。",
+                " - 修正：恢復頁腳版本號的點擊功能，可正常彈出版本歷史視窗。",
+                " - 優化：將網頁標題版本號固定為 v7.0。",
+                 "【✨ 後續優化與修正】",
+                " - 修正：修復大部分按鈕與連結無法點擊的問題。",
+                " - 優化：為「輸入內容」和「上傳圖片」頁籤加上圖示。",
+                " - 新增：「焦糖布丁」與「勃根地紅」兩款主題。",
+                " - 優化：將載入動畫替換為文字閃爍提示，提升穩定性。",
+                " - 新增&修正：頁腳加入瀏覽人數計數器並更換 API 服務。"
             ]
         },
-        {
-            version: "v7.0 可部署版 (含後續更新)",
+        { 
+            version: "v7.0 可部署版",
             notes: [
                 "【🚀 架構重構與部署】",
                 " - 新增：使用者可自行輸入並儲存 Gemini API Key。",
                 " - 重構：程式碼拆分為 HTML, CSS, JS 三個獨立檔案。",
                 " - 優化：程式已可部署至 GitHub Pages 等平台。",
-                "【✨ 後續優化與修正】",
-                " - 修正：修復大部分按鈕與連結無法點擊的問題。",
-                " - 優化：為「輸入內容」和「上傳圖片」頁籤加上圖示。",
-                " - 新增：「焦糖布丁」與「勃根地紅」兩款主題。",
-                " - 優化：將載入動畫替換為文字閃爍提示，提升穩定性。",
             ]
         },
         { 
@@ -736,12 +824,10 @@ async function updateVisitorCount() {
         
         const data = await response.json();
         if (data.count) {
-            // 使用 toLocaleString() 來加上千分位，例如 1,234
             counterElement.textContent = data.count.toLocaleString();
         }
     } catch (error) {
         console.error('無法載入瀏覽人數:', error);
-        // 如果載入失敗，維持顯示 '---'
     }
 }
 
