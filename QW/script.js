@@ -167,12 +167,14 @@ async function generateContentFromTopic() {
             tabText.click();
             if (isCompetencyBased) { questionStyleSelect.value = 'competency-based'; }
             debouncedGenerate(); 
-        } else { throw new Error('AI未能生成內容，請檢查您的 API Key 或稍後再試。'); }
+        } else { 
+            previewLoader.classList.add('hidden'); // On failure, hide loader
+            throw new Error('AI未能生成內容，請檢查您的 API Key 或稍後再試。'); 
+        }
     } catch (error) {
         console.error('生成內文時發生錯誤:', error);
         showToast(error.message, 'error');
-    } finally {
-        previewLoader.classList.add('hidden');
+        previewLoader.classList.add('hidden'); // On catch, hide loader
     }
 }
 
@@ -643,8 +645,16 @@ function removeRealtimeListeners() {
 function populateVersionHistory() {
     const versionHistory = [
         { 
+            version: "v7.1 優化版",
+            current: true,
+            notes: [
+                "【✨ UI優化與修正】",
+                " - 修正：修正了AI生成內容後，題目生成時的載入動畫未正確顯示的問題。",
+                " - 優化：為「輸入內容」和「上傳圖片」頁籤加上圖示，提升識別度。",
+            ]
+        },
+        { 
             version: "v7.0 可部署版", 
-            current: true, 
             notes: [
                 "【🚀 架構重構與部署】",
                 " - 新增：使用者現在可以在設定中輸入自己的 Gemini API Key 來使用本工具。",
@@ -779,3 +789,5 @@ document.addEventListener('DOMContentLoaded', () => {
         clearAllInputs();
     });
 });
+" in the document "功能腳本 (v7.0)"
+
