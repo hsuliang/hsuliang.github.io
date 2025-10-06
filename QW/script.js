@@ -1,5 +1,7 @@
 // 確保 pdf.js 的 worker 路徑在任何操作前被設定
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+}
 
 // --- 組態常數 ---
 const CONFIG = {
@@ -97,10 +99,12 @@ function getApiKey() {
  * @param {'success'|'error'} type - 訊息類型
  */
 function showToast(message, type = 'success') {
-    toastMessage.textContent = message;
-    toast.className = `fixed bottom-5 right-5 text-white py-2 px-5 rounded-lg shadow-xl opacity-0 transition-opacity duration-300 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
-    toast.classList.remove('opacity-0');
-    setTimeout(() => { toast.classList.add('opacity-0'); }, 4000);
+    if (toast && toastMessage) {
+        toastMessage.textContent = message;
+        toast.className = `fixed bottom-5 right-5 text-white py-2 px-5 rounded-lg shadow-xl opacity-0 transition-opacity duration-300 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+        toast.classList.remove('opacity-0');
+        setTimeout(() => { toast.classList.add('opacity-0'); }, 4000);
+    }
 }
 
 /**
@@ -127,11 +131,13 @@ async function generateContentFromTopic() {
         return showToast('請先在右上角「設定」中輸入您的 Gemini API Key！', 'error');
     }
 
+    if (!topicInput || !previewLoader) return;
+
     const topic = topicInput.value;
     if (!topic.trim()) return showToast('請輸入一個主題、單字或語詞！', 'error');
     
     previewLoader.classList.remove('hidden');
-    loadingText.textContent = contentLoadingMessages[Math.floor(Math.random() * contentLoadingMessages.length)];
+    if (loadingText) loadingText.textContent = contentLoadingMessages[Math.floor(Math.random() * contentLoadingMessages.length)];
     
     try {
         const studentLevel = studentLevelSelect.value;
@@ -164,9 +170,9 @@ async function generateContentFromTopic() {
         if (generatedText) {
             textInput.value = generatedText;
             showToast('學習內文已成功生成！', 'success');
-            copyContentBtn.classList.remove('hidden');
-            tabText.click();
-            if (isCompetencyBased) { questionStyleSelect.value = 'competency-based'; }
+            if (copyContentBtn) copyContentBtn.classList.remove('hidden');
+            if (tabText) tabText.click();
+            if (isCompetencyBased && questionStyleSelect) { questionStyleSelect.value = 'competency-based'; }
             debouncedGenerate(); 
         } else { 
             throw new Error('AI未能生成內容，請檢查您的 API Key 或稍後再試。'); 
@@ -175,23 +181,22 @@ async function generateContentFromTopic() {
         console.error('生成內文時發生錯誤:', error);
         showToast(error.message, 'error');
     } finally {
-        previewLoader.classList.add('hidden'); // 確保動畫總是會被隱藏
+        if (previewLoader) previewLoader.classList.add('hidden'); // 確保動畫總是會被隱藏
     }
 }
-
 
 /**
  * 觸發題目生成的主要函式
  */
 function triggerQuestionGeneration() {
-    if (tabImage.classList.contains('active') && uploadedImages.length === 0) {
+    if (tabImage && tabImage.classList.contains('active') && uploadedImages.length === 0) {
          return showToast('請先上傳圖片！', 'error');
     }
     
-    const text = textInput.value;
+    const text = textInput ? textInput.value : '';
     if (!text.trim() && uploadedImages.length === 0) return; 
 
-    if (!previewPlaceholder.classList.contains('hidden')) {
+    if (previewPlaceholder && !previewPlaceholder.classList.contains('hidden')) {
         previewPlaceholder.classList.add('hidden');
     }
     handleGenerateQuestions();
@@ -208,16 +213,16 @@ async function handleGenerateQuestions() {
         return showToast('請先在右上角「設定」中輸入您的 Gemini API Key！', 'error');
     }
 
-    const text = textInput.value;
-    const totalQuestions = parseInt(numQuestionsInput.value, 10);
-    const questionType = questionTypeSelect.value;
-    const difficulty = difficultySelect.value;
-    const questionStyle = questionStyleSelect.value;
+    const text = textInput ? textInput.value : '';
+    const totalQuestions = numQuestionsInput ? parseInt(numQuestionsInput.value, 10) : 0;
+    const questionType = questionTypeSelect ? questionTypeSelect.value : 'multiple_choice';
+    const difficulty = difficultySelect ? difficultySelect.value : '中等';
+    const questionStyle = questionStyleSelect ? questionStyleSelect.value : 'knowledge-recall';
 
     if ((!text.trim() && uploadedImages.length === 0) || totalQuestions <= 0) {
-        questionsContainer.innerHTML = '';
-        previewActions.classList.add('hidden');
-        previewPlaceholder.classList.remove('hidden');
+        if (questionsContainer) questionsContainer.innerHTML = '';
+        if (previewActions) previewActions.classList.add('hidden');
+        if (previewPlaceholder) previewPlaceholder.classList.remove('hidden');
         return;
     }
 
@@ -227,10 +232,10 @@ async function handleGenerateQuestions() {
     currentRequestController = new AbortController();
     const signal = currentRequestController.signal;
 
-    previewLoader.classList.remove('hidden');
-    loadingText.textContent = questionLoadingMessages[Math.floor(Math.random() * questionLoadingMessages.length)];
-    questionsContainer.innerHTML = '';
-    previewActions.classList.add('hidden');
+    if (previewLoader) previewLoader.classList.remove('hidden');
+    if (loadingText) loadingText.textContent = questionLoadingMessages[Math.floor(Math.random() * questionLoadingMessages.length)];
+    if (questionsContainer) questionsContainer.innerHTML = '';
+    if (previewActions) previewActions.classList.add('hidden');
 
     let allGeneratedQs = [];
     
@@ -248,8 +253,8 @@ async function handleGenerateQuestions() {
             generatedQuestions = allGeneratedQs;
             renderQuestionsForEditing(generatedQuestions);
             initializeSortable();
-            previewActions.classList.remove('hidden');
-            previewPlaceholder.classList.add('hidden');
+            if (previewActions) previewActions.classList.remove('hidden');
+            if (previewPlaceholder) previewPlaceholder.classList.add('hidden');
         } else {
             throw new Error("AI 未能生成任何題目，請檢查您的輸入內容或稍後再試。");
         }
@@ -260,11 +265,11 @@ async function handleGenerateQuestions() {
          }
          console.error('生成題目時發生錯誤:', error);
          showToast(error.message, 'error');
-         questionsContainer.innerHTML = '';
-         previewActions.classList.add('hidden');
-         previewPlaceholder.classList.remove('hidden');
+         if (questionsContainer) questionsContainer.innerHTML = '';
+         if (previewActions) previewActions.classList.add('hidden');
+         if (previewPlaceholder) previewPlaceholder.classList.remove('hidden');
     } finally {
-        previewLoader.classList.add('hidden');
+        if (previewLoader) previewLoader.classList.add('hidden');
     }
 }
 
@@ -274,7 +279,7 @@ async function handleGenerateQuestions() {
 async function generateSingleBatch(questionsInBatch, questionType, difficulty, text, images, questionStyle, signal) {
     const apiKey = getApiKey();
     const apiUrl = `${CONFIG.API_URL}${apiKey}`;
-    const selectedFormat = formatSelect.value;
+    const selectedFormat = formatSelect ? formatSelect.value : '';
     const needsExplanation = selectedFormat === 'loilonote' || selectedFormat === 'wayground';
     
     const baseIntro = "你是一位協助國中小老師出題的專家。請根據使用者提供的文本和圖片，";
@@ -356,6 +361,7 @@ async function generateSingleBatch(questionsInBatch, questionType, difficulty, t
  * @param {Array} questions - 題目陣列
  */
 function renderQuestionsForEditing(questions) {
+    if (!questionsContainer) return;
     questionsContainer.innerHTML = '';
     questions.forEach((q, index) => {
         const isTF = q.hasOwnProperty('is_correct');
@@ -374,7 +380,7 @@ function renderQuestionsForEditing(questions) {
         `).join('');
 
         let aiInsightHtml = '';
-        if (questionStyleSelect.value === 'competency-based' && questionData.design_concept) {
+        if (questionStyleSelect && questionStyleSelect.value === 'competency-based' && questionData.design_concept) {
             aiInsightHtml = `
                 <div class="relative flex items-center group">
                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-.707 10.607a1 1 0 011.414 0l.707-.707a1 1 0 111.414 1.414l-.707.707a1 1 0 01-1.414 0zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" /></svg>
@@ -434,6 +440,7 @@ function renderQuestionsForEditing(questions) {
  */
 function initializeSortable() {
     if (sortableInstance) sortableInstance.destroy();
+    if (!questionsContainer) return;
     sortableInstance = new Sortable(questionsContainer, { 
         animation: 150, 
         handle: '.drag-handle', 
@@ -451,11 +458,13 @@ function initializeSortable() {
  * 處理檔案輸入 (txt/pdf)
  */
 function handleFile(file) {
-    fileErrorDisplay.textContent = ''; fileNameDisplay.textContent = ''; fileInput.value = '';
+    if (fileErrorDisplay) fileErrorDisplay.textContent = ''; 
+    if (fileNameDisplay) fileNameDisplay.textContent = ''; 
+    if (fileInput) fileInput.value = '';
     if (!file) return;
-    if (file.type !== 'application/pdf' && file.type !== 'text/plain') { const errorMsg = '檔案格式不支援，請選擇 .txt 或 .pdf 檔案。'; showToast(errorMsg, 'error'); fileErrorDisplay.textContent = errorMsg; return; }
-    if (file.size > CONFIG.MAX_FILE_SIZE_BYTES) { const errorMsg = `檔案過大，請選擇小於 ${CONFIG.MAX_FILE_SIZE_BYTES / 1024 / 1024}MB 的檔案。`; showToast(errorMsg, 'error'); fileErrorDisplay.textContent = errorMsg; return; }
-    fileNameDisplay.textContent = `已選擇檔案：${file.name}`;
+    if (file.type !== 'application/pdf' && file.type !== 'text/plain') { const errorMsg = '檔案格式不支援，請選擇 .txt 或 .pdf 檔案。'; showToast(errorMsg, 'error'); if(fileErrorDisplay) fileErrorDisplay.textContent = errorMsg; return; }
+    if (file.size > CONFIG.MAX_FILE_SIZE_BYTES) { const errorMsg = `檔案過大，請選擇小於 ${CONFIG.MAX_FILE_SIZE_BYTES / 1024 / 1024}MB 的檔案。`; showToast(errorMsg, 'error'); if(fileErrorDisplay) fileErrorDisplay.textContent = errorMsg; return; }
+    if (fileNameDisplay) fileNameDisplay.textContent = `已選擇檔案：${file.name}`;
     const reader = new FileReader();
     if (file.type === 'application/pdf') {
         reader.onload = async (e) => {
@@ -463,12 +472,15 @@ function handleFile(file) {
                 const pdf = await pdfjsLib.getDocument(new Uint8Array(e.target.result)).promise;
                 let text = '';
                 for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); text += content.items.map(item => item.str).join(' '); }
-                textInput.value = text; showToast('PDF 檔案內容已成功讀取！', 'success'); tabText.click(); debouncedGenerate();
-            } catch (error) { const errorMsg = "無法讀取此PDF檔案，檔案可能已損毀。"; showToast(errorMsg, "error"); fileErrorDisplay.textContent = errorMsg; fileNameDisplay.textContent = ''; }
+                if(textInput) textInput.value = text; 
+                showToast('PDF 檔案內容已成功讀取！', 'success'); 
+                if(tabText) tabText.click(); 
+                debouncedGenerate();
+            } catch (error) { const errorMsg = "無法讀取此PDF檔案，檔案可能已損毀。"; showToast(errorMsg, "error"); if(fileErrorDisplay) fileErrorDisplay.textContent = errorMsg; if(fileNameDisplay) fileNameDisplay.textContent = ''; }
         };
         reader.readAsArrayBuffer(file);
     } else {
-        reader.onload = (e) => { textInput.value = e.target.result; showToast('文字檔案內容已成功讀取！', 'success'); tabText.click(); debouncedGenerate(); };
+        reader.onload = (e) => { if(textInput) textInput.value = e.target.result; showToast('文字檔案內容已成功讀取！', 'success'); if(tabText) tabText.click(); debouncedGenerate(); };
         reader.readAsText(file);
     }
 }
@@ -478,7 +490,7 @@ function handleFile(file) {
  */
 function handleImageFiles(newFiles) {
     if (!newFiles || newFiles.length === 0) return;
-    imageErrorDisplay.innerHTML = ''; 
+    if(imageErrorDisplay) imageErrorDisplay.innerHTML = ''; 
     const { MAX_IMAGE_SIZE_BYTES, MAX_TOTAL_IMAGE_SIZE_BYTES } = CONFIG;
     let currentTotalSize = uploadedImages.reduce((sum, img) => sum + img.size, 0);
     let errorMessages = [], sizeLimitReached = false;
@@ -488,8 +500,8 @@ function handleImageFiles(newFiles) {
         if (currentTotalSize + file.size > MAX_TOTAL_IMAGE_SIZE_BYTES) { if (!sizeLimitReached) { errorMessages.push(`圖片總大小超過 ${MAX_TOTAL_IMAGE_SIZE_BYTES / 1024 / 1024}MB 上限，後續圖片未被載入。`); sizeLimitReached = true; } return false; }
         currentTotalSize += file.size; return true;
     });
-    if (errorMessages.length > 0) { imageErrorDisplay.innerHTML = errorMessages.join('<br>'); showToast('部分檔案上傳失敗，請查看提示訊息。', 'error'); }
-    if (validFiles.length === 0) { imageInput.value = ''; return; }
+    if (errorMessages.length > 0) { if(imageErrorDisplay) imageErrorDisplay.innerHTML = errorMessages.join('<br>'); showToast('部分檔案上傳失敗，請查看提示訊息。', 'error'); }
+    if (validFiles.length === 0) { if(imageInput) imageInput.value = ''; return; }
 
     const fragment = document.createDocumentFragment();
     let filesToProcess = validFiles.length;
@@ -509,26 +521,27 @@ function handleImageFiles(newFiles) {
             removeBtn.onclick = () => { 
                 uploadedImages = uploadedImages.filter(img => img.id !== imageObject.id); 
                 previewWrapper.remove(); 
-                if (uploadedImages.length === 0) {
+                if (uploadedImages.length === 0 && generateFromImagesBtn) {
                     generateFromImagesBtn.classList.add('hidden');
                 }
             };
             previewWrapper.appendChild(imgElement); previewWrapper.appendChild(removeBtn);
             fragment.appendChild(previewWrapper);
             if (--filesToProcess === 0) { 
-                imagePreviewContainer.appendChild(fragment); 
-                generateFromImagesBtn.classList.remove('hidden');
+                if (imagePreviewContainer) imagePreviewContainer.appendChild(fragment); 
+                if (generateFromImagesBtn) generateFromImagesBtn.classList.remove('hidden');
             }
         };
         reader.readAsDataURL(file);
     });
-    imageInput.value = '';
+    if(imageInput) imageInput.value = '';
 }
 
 /**
  * 設定拖曳上傳區域
  */
 function setupDragDrop(dropZone, fileHandler, isMultiple) {
+    if (!dropZone) return;
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => dropZone.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false));
     ['dragenter', 'dragover'].forEach(eventName => dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false));
     ['dragleave', 'drop'].forEach(eventName => dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false));
@@ -539,7 +552,7 @@ function setupDragDrop(dropZone, fileHandler, isMultiple) {
  * 匯出題庫檔案
  */
 function exportFile(questions) {
-    const format = formatSelect.value;
+    const format = formatSelect ? formatSelect.value : '';
     if (!format) return showToast('請選擇匯出檔案格式！', 'error');
     if (!questions || questions.length === 0) return showToast('沒有可匯出的題目！', 'error');
     
@@ -585,41 +598,52 @@ function exportFile(questions) {
 // --- UI 互動與輔助函式 ---
 
 function showPostDownloadModal() {
-    postDownloadModal.classList.remove('hidden');
-    setTimeout(() => { postDownloadModalContent.classList.remove('scale-95', 'opacity-0'); }, 10);
+    if (postDownloadModal) postDownloadModal.classList.remove('hidden');
+    if (postDownloadModalContent) setTimeout(() => { postDownloadModalContent.classList.remove('scale-95', 'opacity-0'); }, 10);
 }
 function hidePostDownloadModal() {
-    postDownloadModalContent.classList.add('scale-95', 'opacity-0');
-    setTimeout(() => { postDownloadModal.classList.add('hidden'); }, 200);
+    if (postDownloadModalContent) postDownloadModalContent.classList.add('scale-95', 'opacity-0');
+    if (postDownloadModal) setTimeout(() => { postDownloadModal.classList.add('hidden'); }, 200);
 }
 
 async function copyContentToClipboard() {
-    const textToCopy = textInput.value;
+    const textToCopy = textInput ? textInput.value : '';
     if (!textToCopy.trim()) { showToast('沒有內容可以複製！', 'error'); return; }
     try { await navigator.clipboard.writeText(textToCopy); showToast('文章內容已成功複製！', 'success'); } catch (err) { console.error('複製失敗:', err); showToast('無法複製內容，您的瀏覽器可能不支援此功能或未授予權限。', 'error'); }
 }
 
 function clearAllInputs() {
-    textInput.value = ''; fileInput.value = ''; fileNameDisplay.textContent = ''; fileErrorDisplay.textContent = '';
-    imageInput.value = ''; imagePreviewContainer.innerHTML = ''; imageErrorDisplay.innerHTML = ''; uploadedImages = [];
-    copyContentBtn.classList.add('hidden'); topicInput.value = ''; 
-    questionStyleSelect.value = 'knowledge-recall';
+    if(textInput) textInput.value = ''; 
+    if(fileInput) fileInput.value = ''; 
+    if(fileNameDisplay) fileNameDisplay.textContent = ''; 
+    if(fileErrorDisplay) fileErrorDisplay.textContent = '';
+    if(imageInput) imageInput.value = ''; 
+    if(imagePreviewContainer) imagePreviewContainer.innerHTML = ''; 
+    if(imageErrorDisplay) imageErrorDisplay.innerHTML = ''; 
+    uploadedImages = [];
+    if(copyContentBtn) copyContentBtn.classList.add('hidden'); 
+    if(topicInput) topicInput.value = ''; 
+    if(questionStyleSelect) questionStyleSelect.value = 'knowledge-recall';
     generatedQuestions = [];
-    questionsContainer.innerHTML = '';
-    previewActions.classList.add('hidden');
-    previewPlaceholder.classList.remove('hidden');
-    generateFromImagesBtn.classList.add('hidden');
+    if(questionsContainer) questionsContainer.innerHTML = '';
+    if(previewActions) previewActions.classList.add('hidden');
+    if(previewPlaceholder) previewPlaceholder.classList.remove('hidden');
+    if(generateFromImagesBtn) generateFromImagesBtn.classList.add('hidden');
     showToast('內容已全部清除！', 'success');
 }
 
 function applyLayoutPreference() {
     const preferredLayout = localStorage.getItem('quizGenLayout_v2');
+    if (!mainContainer) return;
+
+    const placeholderP = previewPlaceholder ? previewPlaceholder.querySelector('p') : null;
+
     if (preferredLayout === 'reversed') {
         mainContainer.classList.add('lg:flex-row-reverse');
-        previewPlaceholder.querySelector('p').textContent = '請在右側提供內容並設定選項';
+        if (placeholderP) placeholderP.textContent = '請在右側提供內容並設定選項';
     } else {
         mainContainer.classList.remove('lg:flex-row-reverse');
-        previewPlaceholder.querySelector('p').textContent = '請在左側提供內容並設定選項';
+        if (placeholderP) placeholderP.textContent = '請在左側提供內容並設定選項';
     }
 }
 
@@ -632,19 +656,26 @@ function applyThemePreference() {
 }
 
 function addRealtimeListeners() {
+    if(!controls) return;
     controls.forEach(control => {
-        const eventType = control.tagName === 'TEXTAREA' || control.type === 'number' ? 'input' : 'change';
-        control.addEventListener(eventType, debouncedGenerate);
+        if(control) {
+            const eventType = control.tagName === 'TEXTAREA' || control.type === 'number' ? 'input' : 'change';
+            control.addEventListener(eventType, debouncedGenerate);
+        }
     });
 }
 function removeRealtimeListeners() {
+    if(!controls) return;
     controls.forEach(control => {
-        const eventType = control.tagName === 'TEXTAREA' || control.type === 'number' ? 'input' : 'change';
-        control.removeEventListener(eventType, debouncedGenerate);
+        if(control){
+            const eventType = control.tagName === 'TEXTAREA' || control.type === 'number' ? 'input' : 'change';
+            control.removeEventListener(eventType, debouncedGenerate);
+        }
     });
 }
 
 function populateVersionHistory() {
+    if (!versionHistoryContent) return;
     const versionHistory = [
         { 
             version: "v7.1 優化版",
@@ -676,7 +707,6 @@ function populateVersionHistory() {
             ] 
         },
     ];
-    // (此處省略舊版歷史紀錄以保持簡潔)
     let html = '';
     versionHistory.forEach(v => {
         html += `<div><h4 class="font-bold text-lg">${v.version} ${v.current ? '<span class="text-sm font-normal themed-accent-text">(目前版本)</span>' : ''}</h4><ul class="list-disc list-inside text-gray-600">${v.notes.map(note => `<li>${note}</li>`).join('')}</ul></div>`;
@@ -695,13 +725,13 @@ function addSafeEventListener(element, event, handler, elementName) {
     if (element) {
         element.addEventListener(event, handler);
     } else {
-        console.error(`無法綁定事件：找不到元素 "${elementName}"`);
+        console.error(`無法綁定事件：找不到元素 "${elementName || 'unknown'}"`);
     }
 }
 
-
 // --- 事件監聽器與初始化 ---
 document.addEventListener('DOMContentLoaded', () => {
+    // 初始設定函式（加上安全檢查）
     populateVersionHistory();
     applyLayoutPreference();
     applyThemePreference();
@@ -709,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 載入已儲存的 API Key
     const savedApiKey = getApiKey();
-    if (savedApiKey) {
+    if (apiKeyInput && savedApiKey) {
         apiKeyInput.value = savedApiKey;
     }
 
@@ -724,12 +754,12 @@ document.addEventListener('DOMContentLoaded', () => {
     addSafeEventListener(fileInput, 'change', (event) => handleFile(event.target.files[0]), 'fileInput');
     addSafeEventListener(imageInput, 'change', (event) => handleImageFiles(event.target.files), 'imageInput');
     
-    if (textInput) setupDragDrop(textInput, (file) => handleFile(file), false);
-    if (imageDropZone) setupDragDrop(imageDropZone, handleImageFiles, true);
+    setupDragDrop(textInput, (file) => handleFile(file), false);
+    setupDragDrop(imageDropZone, handleImageFiles, true);
     
     addSafeEventListener(settingsBtn, 'click', (e) => {
         e.stopPropagation();
-        settingsPopover.classList.toggle('open');
+        if (settingsPopover) settingsPopover.classList.toggle('open');
     }, 'settingsBtn');
     
     document.addEventListener('click', (e) => {
@@ -739,29 +769,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     addSafeEventListener(saveApiKeyBtn, 'click', () => {
-        const key = apiKeyInput.value.trim();
-        if (key) {
-            localStorage.setItem('gemini_api_key', key);
-            showToast('API Key 已成功儲存！', 'success');
-        } else {
-            showToast('API Key 不能為空！', 'error');
+        if (apiKeyInput) {
+            const key = apiKeyInput.value.trim();
+            if (key) {
+                localStorage.setItem('gemini_api_key', key);
+                showToast('API Key 已成功儲存！', 'success');
+            } else {
+                showToast('API Key 不能為空！', 'error');
+            }
         }
     }, 'saveApiKeyBtn');
 
     addSafeEventListener(clearApiKeyBtn, 'click', () => {
         localStorage.removeItem('gemini_api_key');
-        apiKeyInput.value = '';
+        if (apiKeyInput) apiKeyInput.value = '';
         showToast('API Key 已清除。', 'success');
     }, 'clearApiKeyBtn');
 
     addSafeEventListener(layoutToggleBtn, 'click', () => {
+        if (!mainContainer) return;
         mainContainer.classList.toggle('lg:flex-row-reverse');
+        const placeholderP = previewPlaceholder ? previewPlaceholder.querySelector('p') : null;
         if (mainContainer.classList.contains('lg:flex-row-reverse')) {
             localStorage.setItem('quizGenLayout_v2', 'reversed');
-             if(previewPlaceholder) previewPlaceholder.querySelector('p').textContent = '請在右側提供內容並設定選項';
+             if(placeholderP) placeholderP.textContent = '請在右側提供內容並設定選項';
         } else {
             localStorage.setItem('quizGenLayout_v2', 'default');
-             if(previewPlaceholder) previewPlaceholder.querySelector('p').textContent = '請在左側提供內容並設定選項';
+             if(placeholderP) placeholderP.textContent = '請在左側提供內容並設定選項';
         }
     }, 'layoutToggleBtn');
     
@@ -775,11 +809,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (tabs) {
+    if (tabs && contents) {
         tabs.forEach((clickedTab, index) => {
             addSafeEventListener(clickedTab, 'click', () => {
-                tabs.forEach(tab => { tab.classList.remove('active'); tab.setAttribute('aria-selected', 'false'); });
-                contents.forEach(content => content.classList.remove('active'));
+                if(!clickedTab) return;
+                tabs.forEach(tab => { if(tab) tab.classList.remove('active'); if(tab) tab.setAttribute('aria-selected', 'false'); });
+                contents.forEach(content => { if(content) content.classList.remove('active'); });
                 
                 clickedTab.classList.add('active');
                 clickedTab.setAttribute('aria-selected', 'true');
@@ -789,20 +824,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (clickedTab === tabImage) {
                     removeRealtimeListeners();
-                    if (uploadedImages.length > 0) {
+                    if (uploadedImages.length > 0 && generateFromImagesBtn) {
                         generateFromImagesBtn.classList.remove('hidden');
                     }
                 } else {
                     addRealtimeListeners();
-                    generateFromImagesBtn.classList.add('hidden');
+                    if(generateFromImagesBtn) generateFromImagesBtn.classList.add('hidden');
                 }
             }, `tab-${index}`);
         });
     }
     
-    addSafeEventListener(versionBtn, 'click', () => versionModal.classList.remove('hidden'), 'versionBtn');
-    addSafeEventListener(closeModalBtn, 'click', () => versionModal.classList.add('hidden'), 'closeModalBtn');
-    addSafeEventListener(versionModal, 'click', (event) => { if (event.target === versionModal) versionModal.classList.add('hidden'); }, 'versionModal');
+    addSafeEventListener(versionBtn, 'click', () => { if(versionModal) versionModal.classList.remove('hidden') }, 'versionBtn');
+    addSafeEventListener(closeModalBtn, 'click', () => { if(versionModal) versionModal.classList.add('hidden') }, 'closeModalBtn');
+    addSafeEventListener(versionModal, 'click', (event) => { if (event.target === versionModal && versionModal) versionModal.classList.add('hidden'); }, 'versionModal');
     
     addSafeEventListener(continueEditingBtn, 'click', hidePostDownloadModal, 'continueEditingBtn');
     addSafeEventListener(clearAndNewBtn, 'click', () => {
