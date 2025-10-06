@@ -133,30 +133,31 @@ async function generateContentFromTopic() {
     previewLoader.classList.remove('hidden');
     loadingText.textContent = contentLoadingMessages[Math.floor(Math.random() * contentLoadingMessages.length)];
     
-    const studentLevel = studentLevelSelect.value;
-    const isCompetencyBased = competencyBasedCheckbox.checked;
-    const apiUrl = `${CONFIG.API_URL}${apiKey}`;
-    const wordCountMap = { '1-2': 200, '3-4': 400, '5-6': 600, '7-9': 800, '9-12': 1000 };
-    const wordCount = wordCountMap[studentLevel];
-    const studentGradeText = studentLevelSelect.options[studentLevelSelect.selectedIndex].text;
-    const userQuery = `主題：${topic}`;
-    let systemPrompt;
-    
-    if (isCompetencyBased) {
-        systemPrompt = `你是一位頂尖的 K-12 教材設計師與說故事專家，專長是將生硬的知識點轉化為引人入勝的生活情境或故事，以培養學生的素養能力。請根據使用者提供的核心主題：「${topic}」，為「${studentGradeText}」程度的學生，創作一篇長度約為 ${wordCount} 字的素養導向短文。\n- 這篇短文應該包含一個清晰的「情境」或「待解決的問題」。\n- 請將核心主題的相關知識，自然地融入故事情節或問題描述中，而不是條列式地說明。\n- 文章風格需生動有趣，能引發學生的閱讀興趣與思考。\n- 最終產出的內容必須是一篇完整的文章，可以直接用於出題。`;
-    } else {
-        const isWordList = topic.includes(',') || /^[a-zA-Z\s,]+$/.test(topic) && topic.split(/\s+|,/).filter(Boolean).length <= 10;
-        systemPrompt = isWordList ? `你是一位為K12學生編寫教材的創意寫作專家。請使用使用者提供的單字或語詞，為「${studentGradeText}」的學生，撰寫一篇有趣且連貫、長度約為 ${wordCount} 字的故事或閱讀短文。請確保這些詞彙自然地融入文章中。` : `你是一位知識淵博的教材編寫專家。請根據使用者提供的主題，為「${studentGradeText}」的學生，生成一段約 ${wordCount} 字的簡潔科普短文。`;
-    }
-
-    const payload = { contents: [{ parts: [{ text: userQuery }] }], systemInstruction: { parts: [{ text: systemPrompt }] }, };
-
     try {
+        const studentLevel = studentLevelSelect.value;
+        const isCompetencyBased = competencyBasedCheckbox.checked;
+        const apiUrl = `${CONFIG.API_URL}${apiKey}`;
+        const wordCountMap = { '1-2': 200, '3-4': 400, '5-6': 600, '7-9': 800, '9-12': 1000 };
+        const wordCount = wordCountMap[studentLevel];
+        const studentGradeText = studentLevelSelect.options[studentLevelSelect.selectedIndex].text;
+        const userQuery = `主題：${topic}`;
+        let systemPrompt;
+        
+        if (isCompetencyBased) {
+            systemPrompt = `你是一位頂尖的 K-12 教材設計師與說故事專家，專長是將生硬的知識點轉化為引人入勝的生活情境或故事，以培養學生的素養能力。請根據使用者提供的核心主題：「${topic}」，為「${studentGradeText}」程度的學生，創作一篇長度約為 ${wordCount} 字的素養導向短文。\n- 這篇短文應該包含一個清晰的「情境」或「待解決的問題」。\n- 請將核心主題的相關知識，自然地融入故事情節或問題描述中，而不是條列式地說明。\n- 文章風格需生動有趣，能引發學生的閱讀興趣與思考。\n- 最終產出的內容必須是一篇完整的文章，可以直接用於出題。`;
+        } else {
+            const isWordList = topic.includes(',') || /^[a-zA-Z\s,]+$/.test(topic) && topic.split(/\s+|,/).filter(Boolean).length <= 10;
+            systemPrompt = isWordList ? `你是一位為K12學生編寫教材的創意寫作專家。請使用使用者提供的單字或語詞，為「${studentGradeText}」的學生，撰寫一篇有趣且連貫、長度約為 ${wordCount} 字的故事或閱讀短文。請確保這些詞彙自然地融入文章中。` : `你是一位知識淵博的教材編寫專家。請根據使用者提供的主題，為「${studentGradeText}」的學生，生成一段約 ${wordCount} 字的簡潔科普短文。`;
+        }
+
+        const payload = { contents: [{ parts: [{ text: userQuery }] }], systemInstruction: { parts: [{ text: systemPrompt }] }, };
         const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        
         if (!response.ok) {
              const errorBody = await response.json().catch(() => ({ error: { message: '無法讀取錯誤內容' } }));
              throw new Error(`API 請求失敗: ${response.status} - ${errorBody.error.message}`);
         }
+        
         const result = await response.json();
         const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
@@ -168,15 +169,16 @@ async function generateContentFromTopic() {
             if (isCompetencyBased) { questionStyleSelect.value = 'competency-based'; }
             debouncedGenerate(); 
         } else { 
-            previewLoader.classList.add('hidden'); // On failure, hide loader
             throw new Error('AI未能生成內容，請檢查您的 API Key 或稍後再試。'); 
         }
     } catch (error) {
         console.error('生成內文時發生錯誤:', error);
         showToast(error.message, 'error');
-        previewLoader.classList.add('hidden'); // On catch, hide loader
+    } finally {
+        previewLoader.classList.add('hidden'); // 確保動畫總是會被隱藏
     }
 }
+
 
 /**
  * 觸發題目生成的主要函式
@@ -682,6 +684,21 @@ function populateVersionHistory() {
     versionHistoryContent.innerHTML = html;
 }
 
+/**
+ * 安全地為一個元素新增事件監聽器，如果元素不存在則在主控台印出錯誤
+ * @param {Element} element - DOM 元素
+ * @param {string} event - 事件名稱
+ * @param {Function} handler - 事件處理函式
+ * @param {string} elementName - (可選) 元素的名稱，用於錯誤訊息
+ */
+function addSafeEventListener(element, event, handler, elementName) {
+    if (element) {
+        element.addEventListener(event, handler);
+    } else {
+        console.error(`無法綁定事件：找不到元素 "${elementName}"`);
+    }
+}
+
 
 // --- 事件監聽器與初始化 ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -696,33 +713,32 @@ document.addEventListener('DOMContentLoaded', () => {
         apiKeyInput.value = savedApiKey;
     }
 
-    // --- 主要按鈕事件 ---
-    generateContentBtn.addEventListener('click', generateContentFromTopic);
-    copyContentBtn.addEventListener('click', copyContentToClipboard);
-    clearContentBtn.addEventListener('click', clearAllInputs);
-    downloadBtn.addEventListener('click', () => exportFile(generatedQuestions));
-    regenerateBtn.addEventListener('click', triggerQuestionGeneration);
-    generateFromImagesBtn.addEventListener('click', triggerQuestionGeneration);
-
-    // --- 檔案與拖曳事件 ---
-    fileInput.addEventListener('change', (event) => handleFile(event.target.files[0]));
-    imageInput.addEventListener('change', (event) => handleImageFiles(event.target.files));
-    setupDragDrop(textInput, (file) => handleFile(file), false);
-    setupDragDrop(imageDropZone, handleImageFiles, true);
+    // --- 使用安全的方式綁定所有事件監聽器 ---
+    addSafeEventListener(generateContentBtn, 'click', generateContentFromTopic, 'generateContentBtn');
+    addSafeEventListener(copyContentBtn, 'click', copyContentToClipboard, 'copyContentBtn');
+    addSafeEventListener(clearContentBtn, 'click', clearAllInputs, 'clearContentBtn');
+    addSafeEventListener(downloadBtn, 'click', () => exportFile(generatedQuestions), 'downloadBtn');
+    addSafeEventListener(regenerateBtn, 'click', triggerQuestionGeneration, 'regenerateBtn');
+    addSafeEventListener(generateFromImagesBtn, 'click', triggerQuestionGeneration, 'generateFromImagesBtn');
     
-    // --- 設定彈出視窗事件 ---
-    settingsBtn.addEventListener('click', (e) => {
+    addSafeEventListener(fileInput, 'change', (event) => handleFile(event.target.files[0]), 'fileInput');
+    addSafeEventListener(imageInput, 'change', (event) => handleImageFiles(event.target.files), 'imageInput');
+    
+    if (textInput) setupDragDrop(textInput, (file) => handleFile(file), false);
+    if (imageDropZone) setupDragDrop(imageDropZone, handleImageFiles, true);
+    
+    addSafeEventListener(settingsBtn, 'click', (e) => {
         e.stopPropagation();
         settingsPopover.classList.toggle('open');
-    });
+    }, 'settingsBtn');
+    
     document.addEventListener('click', (e) => {
-        if (!settingsPopover.contains(e.target) && !settingsBtn.contains(e.target)) {
+        if (settingsPopover && !settingsPopover.contains(e.target) && settingsBtn && !settingsBtn.contains(e.target)) {
             settingsPopover.classList.remove('open');
         }
     });
     
-    // API Key 管理事件
-    saveApiKeyBtn.addEventListener('click', () => {
+    addSafeEventListener(saveApiKeyBtn, 'click', () => {
         const key = apiKeyInput.value.trim();
         if (key) {
             localStorage.setItem('gemini_api_key', key);
@@ -730,64 +746,68 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             showToast('API Key 不能為空！', 'error');
         }
-    });
-    clearApiKeyBtn.addEventListener('click', () => {
+    }, 'saveApiKeyBtn');
+
+    addSafeEventListener(clearApiKeyBtn, 'click', () => {
         localStorage.removeItem('gemini_api_key');
         apiKeyInput.value = '';
         showToast('API Key 已清除。', 'success');
-    });
+    }, 'clearApiKeyBtn');
 
-    // 版面配置切換事件
-    layoutToggleBtn.addEventListener('click', () => {
+    addSafeEventListener(layoutToggleBtn, 'click', () => {
         mainContainer.classList.toggle('lg:flex-row-reverse');
         if (mainContainer.classList.contains('lg:flex-row-reverse')) {
             localStorage.setItem('quizGenLayout_v2', 'reversed');
-             previewPlaceholder.querySelector('p').textContent = '請在右側提供內容並設定選項';
+             if(previewPlaceholder) previewPlaceholder.querySelector('p').textContent = '請在右側提供內容並設定選項';
         } else {
             localStorage.setItem('quizGenLayout_v2', 'default');
-             previewPlaceholder.querySelector('p').textContent = '請在左側提供內容並設定選項';
+             if(previewPlaceholder) previewPlaceholder.querySelector('p').textContent = '請在左側提供內容並設定選項';
         }
-    });
+    }, 'layoutToggleBtn');
     
-    // 主題儲存事件
-    themeRadios.forEach(radio => {
-        radio.addEventListener('change', () => {
-            if(radio.checked) {
-                localStorage.setItem('quizGenTheme_v1', radio.id.replace('theme-', ''));
-            }
-        });
-    });
-
-    // --- 頁籤切換事件 ---
-    tabs.forEach((clickedTab) => {
-        clickedTab.addEventListener('click', () => {
-            tabs.forEach(tab => { tab.classList.remove('active'); tab.setAttribute('aria-selected', 'false'); });
-            contents.forEach(content => content.classList.remove('active'));
-            clickedTab.classList.add('active'); clickedTab.setAttribute('aria-selected', 'true');
-            contents[tabs.indexOf(clickedTab)].classList.add('active');
-
-            if (clickedTab === tabImage) {
-                removeRealtimeListeners();
-                if (uploadedImages.length > 0) {
-                    generateFromImagesBtn.classList.remove('hidden');
+    if (themeRadios) {
+        themeRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if(radio.checked) {
+                    localStorage.setItem('quizGenTheme_v1', radio.id.replace('theme-', ''));
                 }
-            } else {
-                addRealtimeListeners();
-                generateFromImagesBtn.classList.add('hidden');
-            }
+            });
         });
-    });
-    
-    // --- Modal 事件 ---
-    versionBtn.addEventListener('click', () => { versionModal.classList.remove('hidden'); });
-    closeModalBtn.addEventListener('click', () => { versionModal.classList.add('hidden'); });
-    versionModal.addEventListener('click', (event) => { if (event.target === versionModal) { versionModal.classList.add('hidden'); } });
+    }
 
-    continueEditingBtn.addEventListener('click', hidePostDownloadModal);
-    clearAndNewBtn.addEventListener('click', () => {
+    if (tabs) {
+        tabs.forEach((clickedTab, index) => {
+            addSafeEventListener(clickedTab, 'click', () => {
+                tabs.forEach(tab => { tab.classList.remove('active'); tab.setAttribute('aria-selected', 'false'); });
+                contents.forEach(content => content.classList.remove('active'));
+                
+                clickedTab.classList.add('active');
+                clickedTab.setAttribute('aria-selected', 'true');
+                if (contents[index]) {
+                    contents[index].classList.add('active');
+                }
+
+                if (clickedTab === tabImage) {
+                    removeRealtimeListeners();
+                    if (uploadedImages.length > 0) {
+                        generateFromImagesBtn.classList.remove('hidden');
+                    }
+                } else {
+                    addRealtimeListeners();
+                    generateFromImagesBtn.classList.add('hidden');
+                }
+            }, `tab-${index}`);
+        });
+    }
+    
+    addSafeEventListener(versionBtn, 'click', () => versionModal.classList.remove('hidden'), 'versionBtn');
+    addSafeEventListener(closeModalBtn, 'click', () => versionModal.classList.add('hidden'), 'closeModalBtn');
+    addSafeEventListener(versionModal, 'click', (event) => { if (event.target === versionModal) versionModal.classList.add('hidden'); }, 'versionModal');
+    
+    addSafeEventListener(continueEditingBtn, 'click', hidePostDownloadModal, 'continueEditingBtn');
+    addSafeEventListener(clearAndNewBtn, 'click', () => {
         hidePostDownloadModal();
         clearAllInputs();
-    });
+    }, 'clearAndNewBtn');
 });
-" in the document "功能腳本 (v7.0)"
 
