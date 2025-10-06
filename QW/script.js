@@ -173,16 +173,17 @@ async function generateContentFromTopic() {
             if (copyContentBtn) copyContentBtn.classList.remove('hidden');
             if (tabText) tabText.click();
             if (isCompetencyBased && questionStyleSelect) { questionStyleSelect.value = 'competency-based'; }
-            debouncedGenerate(); 
+            // 觸發題目生成，但不要在這裡隱藏動畫
+            triggerQuestionGeneration(); 
         } else { 
             throw new Error('AI未能生成內容，請檢查您的 API Key 或稍後再試。'); 
         }
     } catch (error) {
         console.error('生成內文時發生錯誤:', error);
         showToast(error.message, 'error');
-    } finally {
-        if (previewLoader) previewLoader.classList.add('hidden'); // 確保動畫總是會被隱藏
-    }
+        if (previewLoader) previewLoader.classList.add('hidden'); // 發生錯誤時隱藏
+    } 
+    // 注意：成功時，動畫會由 handleGenerateQuestions 控制
 }
 
 /**
@@ -677,9 +678,16 @@ function removeRealtimeListeners() {
 function populateVersionHistory() {
     if (!versionHistoryContent) return;
     const versionHistory = [
+        {
+            version: "v7.3 視覺優化",
+            current: true,
+            notes: [
+                "【✨ 視覺優化】",
+                " - 將生成內容時的圓形載入動畫，替換為更簡潔、不易出錯的文字閃爍提示。",
+            ]
+        },
          { 
             version: "v7.2 主題更新",
-            current: true,
             notes: [
                 "【🎨 主題擴充】",
                 " - 新增「焦糖布丁」與「勃根地紅」兩款主題。",
