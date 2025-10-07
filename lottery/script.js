@@ -242,7 +242,68 @@ const loadFromPublishedCsv = async () => {
     }
 };
 const parseCsvData = (csvText, columnLetter) => { const columnIndex = columnLetter.charCodeAt(0) - 'A'.charCodeAt(0); participants = csvText.split('\n').slice(1).map(row => { const columns = row.split(',').map(cell => cell.trim().replace(/^"|"$/g, '')); return columns[columnIndex] || null; }).filter(name => name && name.length > 0); };
-const handleDrawWinner = () => { if (drawButton.textContent === '重置' || drawButton.textContent === '結束') { resetApp(); return; } if (drawButton.textContent === '抽獎結束') { winnerDisplay.textContent = '再接再厲'; currentPrizeDisplay.textContent = '感謝參與！'; drawButton.textContent = '重置'; return; } if (participants.length === 0) { winnerDisplay.textContent = '所有人都已中獎！'; drawButton.disabled = true; return; } const currentPrize = prizes[currentPrizeIndex]; if (!currentPrize) return; if (currentPrize.winners.length >= currentPrize.quantity) { currentPrizeIndex++; updatePrizeDisplay(); winnerDisplay.textContent = '準備開始！'; return; } drawButton.disabled = true; playTenseMusic(); rollingInterval = setInterval(() => { winnerDisplay.textContent = participants[Math.floor(Math.random() * participants.length)]; }, 80); setTimeout(() => { clearInterval(rollingInterval); stopTenseMusic(); const winnerIndex = Math.floor(Math.random() * participants.length); const winner = participants.splice(winnerIndex, 1)[0]; const selectedEffect = winnerEffectSelect.value; const revealWinner = () => { winnerDisplay.textContent = winner; if (selectedEffect === 'spotlight') { winnerDisplay.classList.add('effect-spotlight'); } else { winnerDisplay.classList.add('winner-reveal'); } playWinnerSound(); launchConfetti(); currentPrize.winners.push(winner); updateParticipantCount(); updateWinnersList(); updatePrizeDisplay(); drawButton.disabled = false; }; if (selectedEffect === 'marquee') { winnerDisplay.textContent = winner; winnerDisplay.classList.add('effect-marquee'); setTimeout(revealWinner, 1200); } else { revealWinner(); } }, 4000); };
+const handleDrawWinner = () => {
+    if (drawButton.textContent === '重置' || drawButton.textContent === '結束') {
+        resetApp();
+        return;
+    }
+    if (drawButton.textContent === '抽獎結束') {
+        winnerDisplay.textContent = '再接再厲';
+        currentPrizeDisplay.textContent = '感謝參與！';
+        drawButton.textContent = '重置';
+        return;
+    }
+    if (participants.length === 0) {
+        winnerDisplay.textContent = '所有人都已中獎！';
+        drawButton.disabled = true;
+        return;
+    }
+    const currentPrize = prizes[currentPrizeIndex];
+    if (!currentPrize) return;
+    if (currentPrize.winners.length >= currentPrize.quantity) {
+        currentPrizeIndex++;
+        updatePrizeDisplay();
+        winnerDisplay.textContent = '準備開始！';
+        return;
+    }
+    drawButton.disabled = true;
+    playTenseMusic();
+    rollingInterval = setInterval(() => {
+        winnerDisplay.textContent = participants[Math.floor(Math.random() * participants.length)];
+    }, 80);
+    setTimeout(() => {
+        clearInterval(rollingInterval);
+        stopTenseMusic();
+        const winnerIndex = Math.floor(Math.random() * participants.length);
+        const winnerName = participants.splice(winnerIndex, 1)[0];
+        const selectedEffect = winnerEffectSelect.value;
+        const revealWinner = () => {
+            winnerDisplay.textContent = winnerName;
+            if (selectedEffect === 'spotlight') {
+                winnerDisplay.classList.add('effect-spotlight');
+            } else {
+                winnerDisplay.classList.add('winner-reveal');
+            }
+            playWinnerSound();
+            launchConfetti();
+            
+            // ★ 修改：存入物件而非字串，並預設為未領獎
+            currentPrize.winners.push({ name: winnerName, claimed: false });
+            
+            updateParticipantCount();
+            updateWinnersList();
+            updatePrizeDisplay();
+            drawButton.disabled = false;
+        };
+        if (selectedEffect === 'marquee') {
+            winnerDisplay.textContent = winnerName;
+            winnerDisplay.classList.add('effect-marquee');
+            setTimeout(revealWinner, 1200);
+        } else {
+            revealWinner();
+        }
+    }, 4000);
+};
 const setupThemes = () => { const themeContainer = document.getElementById('theme-selector'); themeContainer.innerHTML = ''; themes.forEach(theme => { const button = document.createElement('button'); button.className = 'theme-button'; button.title = theme.name; button.dataset.theme = theme.id; button.style.background = `linear-gradient(45deg, ${theme.colors[0]}, ${theme.colors[1]})`; button.addEventListener('click', () => { applyTheme(theme.id); }); themeContainer.appendChild(button); }); };
 const applyTheme = (themeId) => { document.body.className = document.body.className.replace(/theme-\w+/g, ''); if (themeId !== 'izakaya') { document.body.classList.add(`theme-${themeId}`); } localStorage.setItem('lotteryTheme', themeId); document.querySelectorAll('.theme-button').forEach(btn => { btn.classList.toggle('active', btn.dataset.theme === themeId); }); };
 const loadTheme = () => { const savedTheme = localStorage.getItem('lotteryTheme') || 'candy'; applyTheme(savedTheme); };
@@ -267,8 +328,102 @@ const switchToLotteryView = () => {
 const adjustPrizeNameFontSize = () => { const nameElement = document.getElementById('finished-prize-name'); if (!nameElement) return; const container = winnerDisplay; let fontSize = 4; const minFontSize = 1; const step = 0.2; nameElement.style.fontSize = `${fontSize}rem`; while (nameElement.scrollWidth > container.clientWidth * 0.95 && fontSize > minFontSize) { fontSize -= step; nameElement.style.fontSize = `${fontSize}rem`; } };
 const updatePrizeDisplay = () => { const isSimpleMode = simpleDrawToggle.checked; if (currentPrizeIndex >= prizes.length) { if (isSimpleMode) { currentPrizeDisplay.textContent = '所有人都已抽出！'; drawButton.textContent = '結束'; } else { currentPrizeDisplay.textContent = '所有項目已抽完！'; drawButton.textContent = '抽獎結束'; } drawButton.disabled = false; exportCsvBtn.classList.remove('hidden'); return; } const currentPrize = prizes[currentPrizeIndex]; if (isSimpleMode) { currentPrizeDisplay.textContent = '幸運的你'; } else { const progress = `${currentPrize.winners.length} / ${currentPrize.quantity}`; currentPrizeDisplay.textContent = `正在抽取: ${currentPrize.name} (${progress})`; } if (currentPrize.winners.length >= currentPrize.quantity) { if (!isSimpleMode) { winnerDisplay.innerHTML = ` <div class="flex flex-col items-center justify-center leading-tight"> <div id="finished-prize-name" class="w-full px-4 text-center whitespace-nowrap" style="font-size: 4rem;">${currentPrize.name}</div> <div class="text-4xl mt-2">已抽完！</div> </div>`; adjustPrizeNameFontSize(); } const nextPrize = prizes[currentPrizeIndex + 1]; drawButton.textContent = nextPrize ? `繼續抽「${nextPrize.name}」` : '抽獎結束'; if (!nextPrize) { drawButton.disabled = false; exportCsvBtn.classList.remove('hidden'); } } else { if (isSimpleMode) { drawButton.textContent = '抽籤'; } else { const randomPhrase = buttonPhrases[Math.floor(Math.random() * buttonPhrases.length)]; drawButton.textContent = randomPhrase; } } };
 const updateParticipantCount = () => { participantCountSpan.textContent = participants.length; };
-const updateWinnersList = () => { const isSimpleMode = simpleDrawToggle.checked; const hasAnyWinners = prizes.some(p => p.winners.length > 0); if (hasAnyWinners) { winnersListContainer.classList.remove('hidden'); mainDrawPanel.classList.remove('md:w-full'); mainDrawPanel.classList.add('md:w-[70%]'); } else { return; } winnersList.innerHTML = ''; if (isSimpleMode) { document.getElementById('winners-list-title').textContent = '已抽出名單'; const winnerNames = document.createElement('div'); winnerNames.className = 'grid grid-cols-2 gap-x-4 gap-y-2 mt-2 text-base'; prizes[0].winners.forEach(winner => { const winnerTag = document.createElement('div'); winnerTag.textContent = winner; winnerTag.className = 'winner-tag px-2 py-1 rounded-md truncate cursor-pointer transition-colors'; winnerTag.addEventListener('click', (e) => { e.currentTarget.classList.toggle('claimed'); }); winnerNames.appendChild(winnerTag); }); winnersList.appendChild(winnerNames); } else { document.getElementById('winners-list-title').textContent = '🎉 得獎名單 🎉'; prizes.forEach(prize => { if (prize.winners.length > 0) { const prizeContainer = document.createElement('div'); prizeContainer.innerHTML = `<h4 class="font-bold text-lg" style="color: var(--accent-color);">${prize.name} (${prize.winners.length}/${prize.quantity})</h4>`; const winnerNames = document.createElement('div'); winnerNames.className = 'grid grid-cols-2 gap-x-4 gap-y-2 mt-2 text-base'; prize.winners.forEach(winner => { const winnerTag = document.createElement('div'); winnerTag.textContent = winner; winnerTag.className = 'winner-tag px-2 py-1 rounded-md truncate cursor-pointer transition-colors'; winnerTag.addEventListener('click', (e) => { e.currentTarget.classList.toggle('claimed'); }); winnerNames.appendChild(winnerTag); }); prizeContainer.appendChild(winnerNames); winnersList.appendChild(prizeContainer); } }); } };
-const exportResultsToCsv = () => { const isSimpleMode = simpleDrawToggle.checked; let csvContent = isSimpleMode ? '\uFEFF"抽出順序","姓名"\n' : '\uFEFF"獎項","得獎人"\n'; prizes.forEach(prize => { prize.winners.forEach((winner, index) => { const winnerEscaped = `"${winner.replace(/"/g, '""')}"`; if (isSimpleMode) { csvContent += `${index + 1},${winnerEscaped}\n`; } else { const prizeNameEscaped = `"${prize.name.replace(/"/g, '""')}"`; csvContent += `${prizeNameEscaped},${winnerEscaped}\n`; } }); }); const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); const url = URL.createObjectURL(blob); link.setAttribute("href", url); const today = new Date(); const yyyy = today.getFullYear(); const mm = String(today.getMonth() + 1).padStart(2, '0'); const dd = String(today.getDate()).padStart(2, '0'); const dateString = `${yyyy}${mm}${dd}`; const baseName = isSimpleMode ? '抽出名單' : '得獎名單'; const fileName = `ㄚ亮笑長的抽抽樂-${baseName}-${dateString}.csv`; link.setAttribute("download", fileName); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); };
+const updateWinnersList = () => {
+    const isSimpleMode = simpleDrawToggle.checked;
+    const hasAnyWinners = prizes.some(p => p.winners.length > 0);
+    if (hasAnyWinners) {
+        winnersListContainer.classList.remove('hidden');
+        mainDrawPanel.classList.remove('md:w-full');
+        mainDrawPanel.classList.add('md:w-[70%]');
+    } else {
+        return;
+    }
+    winnersList.innerHTML = '';
+    if (isSimpleMode) {
+        document.getElementById('winners-list-title').textContent = '已抽出名單';
+        const winnerNames = document.createElement('div');
+        winnerNames.className = 'grid grid-cols-2 gap-x-4 gap-y-2 mt-2 text-base';
+        prizes[0].winners.forEach(winner => {
+            const winnerTag = document.createElement('div');
+            winnerTag.textContent = winner.name; // ★ 修改：讀取物件的 name 屬性
+            winnerTag.className = 'winner-tag px-2 py-1 rounded-md truncate cursor-pointer transition-colors';
+            
+            // ★ 新增：根據記憶體的狀態，決定是否要加上樣式
+            if (winner.claimed) {
+                winnerTag.classList.add('claimed');
+            }
+            
+            // ★ 修改：點擊時，同時更新記憶體狀態與視覺樣式
+            winnerTag.addEventListener('click', (e) => {
+                winner.claimed = !winner.claimed;
+                e.currentTarget.classList.toggle('claimed', winner.claimed);
+            });
+            winnerNames.appendChild(winnerTag);
+        });
+        winnersList.appendChild(winnerNames);
+    } else {
+        document.getElementById('winners-list-title').textContent = '🎉 得獎名單 🎉';
+        prizes.forEach(prize => {
+            if (prize.winners.length > 0) {
+                const prizeContainer = document.createElement('div');
+                prizeContainer.innerHTML = `<h4 class="font-bold text-lg" style="color: var(--accent-color);">${prize.name} (${prize.winners.length}/${prize.quantity})</h4>`;
+                const winnerNames = document.createElement('div');
+                winnerNames.className = 'grid grid-cols-2 gap-x-4 gap-y-2 mt-2 text-base';
+                prize.winners.forEach(winner => {
+                    const winnerTag = document.createElement('div');
+                    winnerTag.textContent = winner.name; // ★ 修改：讀取物件的 name 屬性
+                    winnerTag.className = 'winner-tag px-2 py-1 rounded-md truncate cursor-pointer transition-colors';
+
+                    // ★ 新增：根據記憶體的狀態，決定是否要加上樣式
+                    if (winner.claimed) {
+                        winnerTag.classList.add('claimed');
+                    }
+                    
+                    // ★ 修改：點擊時，同時更新記憶體狀態與視覺樣式
+                    winnerTag.addEventListener('click', (e) => {
+                        winner.claimed = !winner.claimed;
+                        e.currentTarget.classList.toggle('claimed', winner.claimed);
+                    });
+                    winnerNames.appendChild(winnerTag);
+                });
+                prizeContainer.appendChild(winnerNames);
+                winnersList.appendChild(prizeContainer);
+            }
+        });
+    }
+};
+const exportResultsToCsv = () => {
+    const isSimpleMode = simpleDrawToggle.checked;
+    let csvContent = isSimpleMode ? '\uFEFF"抽出順序","姓名"\n' : '\uFEFF"獎項","得獎人"\n';
+    prizes.forEach(prize => {
+        prize.winners.forEach((winner, index) => {
+            // ★ 修改：讀取物件的 name 屬性
+            const winnerEscaped = `"${winner.name.replace(/"/g, '""')}"`;
+            if (isSimpleMode) {
+                csvContent += `${index + 1},${winnerEscaped}\n`;
+            } else {
+                const prizeNameEscaped = `"${prize.name.replace(/"/g, '""')}"`;
+                csvContent += `${prizeNameEscaped},${winnerEscaped}\n`;
+            }
+        });
+    });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const dateString = `${yyyy}${mm}${dd}`;
+    const baseName = isSimpleMode ? '抽出名單' : '得獎名單';
+    const fileName = `ㄚ亮笑長的抽抽樂-${baseName}-${dateString}.csv`;
+    link.setAttribute("download", fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
 const resetApp = () => {
     settingsSection.classList.remove('hidden');
     lotterySection.classList.add('hidden');
