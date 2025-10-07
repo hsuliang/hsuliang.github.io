@@ -257,7 +257,6 @@ const handleDrawWinner = () => {
     const currentPrize = prizes[currentPrizeIndex];
     if (!currentPrize) return;
 
-    // ★ 新增：檢查當前獎項是否已抽滿，若是，則顯示「已抽完」訊息並準備下一輪
     if (currentPrize.winners.length >= currentPrize.quantity) {
         if (!simpleDrawToggle.checked) {
             winnerDisplay.innerHTML = ` <div class="flex flex-col items-center justify-center leading-tight"> <div id="finished-prize-name" class="w-full px-4 text-center whitespace-nowrap" style="font-size: 4rem;">${currentPrize.name}</div> <div class="text-4xl mt-2">已抽完！</div> </div>`;
@@ -266,7 +265,6 @@ const handleDrawWinner = () => {
         currentPrizeIndex++;
         updatePrizeDisplay();
         
-        // 短暫延遲後，清空畫面以準備抽下一個獎項
         if (currentPrizeIndex < prizes.length) {
             setTimeout(() => {
                 winnerDisplay.textContent = '準備開始！';
@@ -345,7 +343,10 @@ const switchToLotteryView = () => {
 const adjustPrizeNameFontSize = () => { const nameElement = document.getElementById('finished-prize-name'); if (!nameElement) return; const container = winnerDisplay; let fontSize = 4; const minFontSize = 1; const step = 0.2; nameElement.style.fontSize = `${fontSize}rem`; while (nameElement.scrollWidth > container.clientWidth * 0.95 && fontSize > minFontSize) { fontSize -= step; nameElement.style.fontSize = `${fontSize}rem`; } };
 const updatePrizeDisplay = () => {
     const isSimpleMode = simpleDrawToggle.checked;
-    if (currentPrizeIndex >= prizes.length) {
+    // ★ 邏輯更新：即使抽完所有獎項，也先停在最後一個獎項的索引，以便補抽
+    const allPrizesDrawn = prizes.every(p => p.winners.length >= p.quantity);
+
+    if (allPrizesDrawn) {
         if (isSimpleMode) {
             currentPrizeDisplay.textContent = '所有人都已抽出！';
             drawButton.textContent = '結束';
@@ -355,6 +356,7 @@ const updatePrizeDisplay = () => {
         }
         drawButton.disabled = false;
         exportCsvBtn.classList.remove('hidden');
+        updateWinnersList(); // ★ 新增：抽完後再呼叫一次，確保補抽按鈕出現
         return;
     }
 
@@ -366,27 +368,49 @@ const updatePrizeDisplay = () => {
         currentPrizeDisplay.textContent = `正在抽取: ${currentPrize.name} (${progress})`;
     }
 
-    // ★ 修改：移除在此處顯示「已抽完」畫面的邏輯
     if (currentPrize.winners.length >= currentPrize.quantity) {
-        const nextPrize = prizes[currentPrizeIndex + 1];
+        const nextPrize = prizes.find((p, index) => index > currentPrizeIndex && p.winners.length < p.quantity);
         drawButton.textContent = nextPrize ? `繼續抽「${nextPrize.name}」` : '抽獎結束';
-        if (!nextPrize) {
-            drawButton.disabled = false;
-            exportCsvBtn.classList.remove('hidden');
-        }
     } else {
         if (isSimpleMode) {
             drawButton.textContent = '抽籤';
         } else {
-            const randomPhrase = buttonPhrases[Math.floor(Math.random() * buttonPhrases.length)];
-            drawButton.textContent = randomPhrase;
+            drawButton.textContent = '開始補抽';
         }
     }
 };
 const updateParticipantCount = () => { participantCountSpan.textContent = participants.length; };
+const handleRedraw = (prizeIndex, winnerIndex) => {
+    const prize = prizes[prizeIndex];
+    if (!prize) return;
+
+    // 從得獎名單中移除棄權者
+    const winnerToRedraw = prize.winners.splice(winnerIndex, 1)[0];
+    if (!winnerToRedraw) return;
+
+    // 將棄權者的名字加回抽獎池
+    participants.push(winnerToRedraw.name);
+
+    // 設定當前抽獎為需要補抽的獎項
+    currentPrizeIndex = prizeIndex;
+
+    // 更新UI狀態以準備補抽
+    drawButton.disabled = false;
+    drawButton.textContent = '開始補抽';
+    winnerDisplay.textContent = '準備補抽！';
+    exportCsvBtn.classList.add('hidden'); // 補抽時暫時隱藏匯出按鈕
+
+    // 刷新畫面
+    updateParticipantCount();
+    updateWinnersList();
+    updatePrizeDisplay();
+};
+
 const updateWinnersList = () => {
     const isSimpleMode = simpleDrawToggle.checked;
     const hasAnyWinners = prizes.some(p => p.winners.length > 0);
+    const allPrizesDrawn = prizes.every(p => p.winners.length >= p.quantity);
+
     if (hasAnyWinners) {
         winnersListContainer.classList.remove('hidden');
         mainDrawPanel.classList.remove('md:w-full');
@@ -395,47 +419,61 @@ const updateWinnersList = () => {
         return;
     }
     winnersList.innerHTML = '';
+
+    const createWinnerTag = (winner, prizeIndex, winnerIndex) => {
+        const winnerTagContainer = document.createElement('div');
+        winnerTagContainer.className = 'winner-tag px-2 py-1 rounded-md flex items-center justify-between';
+
+        const winnerNameSpan = document.createElement('span');
+        winnerNameSpan.textContent = winner.name;
+        winnerNameSpan.className = 'truncate cursor-pointer';
+        
+        // 標示已領獎功能
+        winnerNameSpan.addEventListener('click', () => {
+            winner.claimed = !winner.claimed;
+            winnerTagContainer.classList.toggle('claimed', winner.claimed);
+        });
+        if (winner.claimed) {
+            winnerTagContainer.classList.add('claimed');
+        }
+
+        winnerTagContainer.appendChild(winnerNameSpan);
+
+        // ★ 新增：如果全部抽完，則顯示補抽按鈕
+        if (allPrizesDrawn && !isSimpleMode) {
+            const redrawBtn = document.createElement('button');
+            redrawBtn.className = 'redraw-btn';
+            redrawBtn.innerHTML = '⟲';
+            redrawBtn.title = '棄權補抽';
+            redrawBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // 防止觸發到父層的領獎點擊事件
+                handleRedraw(prizeIndex, winnerIndex);
+            });
+            winnerTagContainer.appendChild(redrawBtn);
+        }
+        
+        return winnerTagContainer;
+    };
+
     if (isSimpleMode) {
         document.getElementById('winners-list-title').textContent = '已抽出名單';
         const winnerNames = document.createElement('div');
         winnerNames.className = 'grid grid-cols-2 gap-x-4 gap-y-2 mt-2 text-base';
-        prizes[0].winners.forEach(winner => {
-            const winnerTag = document.createElement('div');
-            winnerTag.textContent = winner.name;
-            winnerTag.className = 'winner-tag px-2 py-1 rounded-md truncate cursor-pointer transition-colors';
-            
-            if (winner.claimed) {
-                winnerTag.classList.add('claimed');
-            }
-            
-            winnerTag.addEventListener('click', (e) => {
-                winner.claimed = !winner.claimed;
-                e.currentTarget.classList.toggle('claimed', winner.claimed);
-            });
+        prizes[0].winners.forEach((winner, index) => {
+            const winnerTag = createWinnerTag(winner, 0, index);
             winnerNames.appendChild(winnerTag);
         });
         winnersList.appendChild(winnerNames);
     } else {
         document.getElementById('winners-list-title').textContent = '🎉 得獎名單 🎉';
-        prizes.forEach(prize => {
+        prizes.forEach((prize, prizeIndex) => {
             if (prize.winners.length > 0) {
                 const prizeContainer = document.createElement('div');
                 prizeContainer.innerHTML = `<h4 class="font-bold text-lg" style="color: var(--accent-color);">${prize.name} (${prize.winners.length}/${prize.quantity})</h4>`;
                 const winnerNames = document.createElement('div');
                 winnerNames.className = 'grid grid-cols-2 gap-x-4 gap-y-2 mt-2 text-base';
-                prize.winners.forEach(winner => {
-                    const winnerTag = document.createElement('div');
-                    winnerTag.textContent = winner.name;
-                    winnerTag.className = 'winner-tag px-2 py-1 rounded-md truncate cursor-pointer transition-colors';
-
-                    if (winner.claimed) {
-                        winnerTag.classList.add('claimed');
-                    }
-                    
-                    winnerTag.addEventListener('click', (e) => {
-                        winner.claimed = !winner.claimed;
-                        e.currentTarget.classList.toggle('claimed', winner.claimed);
-                    });
+                prize.winners.forEach((winner, winnerIndex) => {
+                    const winnerTag = createWinnerTag(winner, prizeIndex, winnerIndex);
                     winnerNames.appendChild(winnerTag);
                 });
                 prizeContainer.appendChild(winnerNames);
@@ -444,6 +482,7 @@ const updateWinnersList = () => {
         });
     }
 };
+
 const exportResultsToCsv = () => {
     const isSimpleMode = simpleDrawToggle.checked;
     let csvContent = isSimpleMode ? '\uFEFF"抽出順序","姓名"\n' : '\uFEFF"獎項","得獎人"\n';
