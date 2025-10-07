@@ -343,7 +343,6 @@ const switchToLotteryView = () => {
 const adjustPrizeNameFontSize = () => { const nameElement = document.getElementById('finished-prize-name'); if (!nameElement) return; const container = winnerDisplay; let fontSize = 4; const minFontSize = 1; const step = 0.2; nameElement.style.fontSize = `${fontSize}rem`; while (nameElement.scrollWidth > container.clientWidth * 0.95 && fontSize > minFontSize) { fontSize -= step; nameElement.style.fontSize = `${fontSize}rem`; } };
 const updatePrizeDisplay = () => {
     const isSimpleMode = simpleDrawToggle.checked;
-    // ★ 邏輯更新：即使抽完所有獎項，也先停在最後一個獎項的索引，以便補抽
     const allPrizesDrawn = prizes.every(p => p.winners.length >= p.quantity);
 
     if (allPrizesDrawn) {
@@ -356,7 +355,7 @@ const updatePrizeDisplay = () => {
         }
         drawButton.disabled = false;
         exportCsvBtn.classList.remove('hidden');
-        updateWinnersList(); // ★ 新增：抽完後再呼叫一次，確保補抽按鈕出現
+        updateWinnersList(); 
         return;
     }
 
@@ -375,7 +374,13 @@ const updatePrizeDisplay = () => {
         if (isSimpleMode) {
             drawButton.textContent = '抽籤';
         } else {
-            drawButton.textContent = '開始補抽';
+            // ★ 修正：區分正常抽獎與補抽情境
+            if (winnerDisplay.textContent === '準備補抽！') {
+                drawButton.textContent = '開始補抽';
+            } else {
+                const randomPhrase = buttonPhrases[Math.floor(Math.random() * buttonPhrases.length)];
+                drawButton.textContent = randomPhrase;
+            }
         }
     }
 };
@@ -384,23 +389,16 @@ const handleRedraw = (prizeIndex, winnerIndex) => {
     const prize = prizes[prizeIndex];
     if (!prize) return;
 
-    // 從得獎名單中移除棄權者
     const winnerToRedraw = prize.winners.splice(winnerIndex, 1)[0];
     if (!winnerToRedraw) return;
 
-    // 將棄權者的名字加回抽獎池
     participants.push(winnerToRedraw.name);
-
-    // 設定當前抽獎為需要補抽的獎項
     currentPrizeIndex = prizeIndex;
 
-    // 更新UI狀態以準備補抽
     drawButton.disabled = false;
-    drawButton.textContent = '開始補抽';
     winnerDisplay.textContent = '準備補抽！';
-    exportCsvBtn.classList.add('hidden'); // 補抽時暫時隱藏匯出按鈕
+    exportCsvBtn.classList.add('hidden');
 
-    // 刷新畫面
     updateParticipantCount();
     updateWinnersList();
     updatePrizeDisplay();
@@ -428,7 +426,6 @@ const updateWinnersList = () => {
         winnerNameSpan.textContent = winner.name;
         winnerNameSpan.className = 'truncate cursor-pointer';
         
-        // 標示已領獎功能
         winnerNameSpan.addEventListener('click', () => {
             winner.claimed = !winner.claimed;
             winnerTagContainer.classList.toggle('claimed', winner.claimed);
@@ -439,14 +436,13 @@ const updateWinnersList = () => {
 
         winnerTagContainer.appendChild(winnerNameSpan);
 
-        // ★ 新增：如果全部抽完，則顯示補抽按鈕
         if (allPrizesDrawn && !isSimpleMode) {
             const redrawBtn = document.createElement('button');
             redrawBtn.className = 'redraw-btn';
             redrawBtn.innerHTML = '⟲';
             redrawBtn.title = '棄權補抽';
             redrawBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // 防止觸發到父層的領獎點擊事件
+                e.stopPropagation();
                 handleRedraw(prizeIndex, winnerIndex);
             });
             winnerTagContainer.appendChild(redrawBtn);
