@@ -253,30 +253,47 @@ const handleDrawWinner = () => {
         drawButton.textContent = '重置';
         return;
     }
+
+    const currentPrize = prizes[currentPrizeIndex];
+    if (!currentPrize) return;
+
+    // ★ 新增：檢查當前獎項是否已抽滿，若是，則顯示「已抽完」訊息並準備下一輪
+    if (currentPrize.winners.length >= currentPrize.quantity) {
+        if (!simpleDrawToggle.checked) {
+            winnerDisplay.innerHTML = ` <div class="flex flex-col items-center justify-center leading-tight"> <div id="finished-prize-name" class="w-full px-4 text-center whitespace-nowrap" style="font-size: 4rem;">${currentPrize.name}</div> <div class="text-4xl mt-2">已抽完！</div> </div>`;
+            adjustPrizeNameFontSize();
+        }
+        currentPrizeIndex++;
+        updatePrizeDisplay();
+        
+        // 短暫延遲後，清空畫面以準備抽下一個獎項
+        if (currentPrizeIndex < prizes.length) {
+            setTimeout(() => {
+                winnerDisplay.textContent = '準備開始！';
+            }, 2000);
+        }
+        return;
+    }
+
     if (participants.length === 0) {
         winnerDisplay.textContent = '所有人都已中獎！';
         drawButton.disabled = true;
         return;
     }
-    const currentPrize = prizes[currentPrizeIndex];
-    if (!currentPrize) return;
-    if (currentPrize.winners.length >= currentPrize.quantity) {
-        currentPrizeIndex++;
-        updatePrizeDisplay();
-        winnerDisplay.textContent = '準備開始！';
-        return;
-    }
+
     drawButton.disabled = true;
     playTenseMusic();
     rollingInterval = setInterval(() => {
         winnerDisplay.textContent = participants[Math.floor(Math.random() * participants.length)];
     }, 80);
+
     setTimeout(() => {
         clearInterval(rollingInterval);
         stopTenseMusic();
         const winnerIndex = Math.floor(Math.random() * participants.length);
         const winnerName = participants.splice(winnerIndex, 1)[0];
         const selectedEffect = winnerEffectSelect.value;
+
         const revealWinner = () => {
             winnerDisplay.textContent = winnerName;
             if (selectedEffect === 'spotlight') {
@@ -287,7 +304,6 @@ const handleDrawWinner = () => {
             playWinnerSound();
             launchConfetti();
             
-            // ★ 修改：存入物件而非字串，並預設為未領獎
             currentPrize.winners.push({ name: winnerName, claimed: false });
             
             updateParticipantCount();
@@ -295,6 +311,7 @@ const handleDrawWinner = () => {
             updatePrizeDisplay();
             drawButton.disabled = false;
         };
+
         if (selectedEffect === 'marquee') {
             winnerDisplay.textContent = winnerName;
             winnerDisplay.classList.add('effect-marquee');
@@ -326,7 +343,46 @@ const switchToLotteryView = () => {
     updatePrizeDisplay();
 };
 const adjustPrizeNameFontSize = () => { const nameElement = document.getElementById('finished-prize-name'); if (!nameElement) return; const container = winnerDisplay; let fontSize = 4; const minFontSize = 1; const step = 0.2; nameElement.style.fontSize = `${fontSize}rem`; while (nameElement.scrollWidth > container.clientWidth * 0.95 && fontSize > minFontSize) { fontSize -= step; nameElement.style.fontSize = `${fontSize}rem`; } };
-const updatePrizeDisplay = () => { const isSimpleMode = simpleDrawToggle.checked; if (currentPrizeIndex >= prizes.length) { if (isSimpleMode) { currentPrizeDisplay.textContent = '所有人都已抽出！'; drawButton.textContent = '結束'; } else { currentPrizeDisplay.textContent = '所有項目已抽完！'; drawButton.textContent = '抽獎結束'; } drawButton.disabled = false; exportCsvBtn.classList.remove('hidden'); return; } const currentPrize = prizes[currentPrizeIndex]; if (isSimpleMode) { currentPrizeDisplay.textContent = '幸運的你'; } else { const progress = `${currentPrize.winners.length} / ${currentPrize.quantity}`; currentPrizeDisplay.textContent = `正在抽取: ${currentPrize.name} (${progress})`; } if (currentPrize.winners.length >= currentPrize.quantity) { if (!isSimpleMode) { winnerDisplay.innerHTML = ` <div class="flex flex-col items-center justify-center leading-tight"> <div id="finished-prize-name" class="w-full px-4 text-center whitespace-nowrap" style="font-size: 4rem;">${currentPrize.name}</div> <div class="text-4xl mt-2">已抽完！</div> </div>`; adjustPrizeNameFontSize(); } const nextPrize = prizes[currentPrizeIndex + 1]; drawButton.textContent = nextPrize ? `繼續抽「${nextPrize.name}」` : '抽獎結束'; if (!nextPrize) { drawButton.disabled = false; exportCsvBtn.classList.remove('hidden'); } } else { if (isSimpleMode) { drawButton.textContent = '抽籤'; } else { const randomPhrase = buttonPhrases[Math.floor(Math.random() * buttonPhrases.length)]; drawButton.textContent = randomPhrase; } } };
+const updatePrizeDisplay = () => {
+    const isSimpleMode = simpleDrawToggle.checked;
+    if (currentPrizeIndex >= prizes.length) {
+        if (isSimpleMode) {
+            currentPrizeDisplay.textContent = '所有人都已抽出！';
+            drawButton.textContent = '結束';
+        } else {
+            currentPrizeDisplay.textContent = '所有項目已抽完！';
+            drawButton.textContent = '抽獎結束';
+        }
+        drawButton.disabled = false;
+        exportCsvBtn.classList.remove('hidden');
+        return;
+    }
+
+    const currentPrize = prizes[currentPrizeIndex];
+    if (isSimpleMode) {
+        currentPrizeDisplay.textContent = '幸運的你';
+    } else {
+        const progress = `${currentPrize.winners.length} / ${currentPrize.quantity}`;
+        currentPrizeDisplay.textContent = `正在抽取: ${currentPrize.name} (${progress})`;
+    }
+
+    // ★ 修改：移除在此處顯示「已抽完」畫面的邏輯
+    if (currentPrize.winners.length >= currentPrize.quantity) {
+        const nextPrize = prizes[currentPrizeIndex + 1];
+        drawButton.textContent = nextPrize ? `繼續抽「${nextPrize.name}」` : '抽獎結束';
+        if (!nextPrize) {
+            drawButton.disabled = false;
+            exportCsvBtn.classList.remove('hidden');
+        }
+    } else {
+        if (isSimpleMode) {
+            drawButton.textContent = '抽籤';
+        } else {
+            const randomPhrase = buttonPhrases[Math.floor(Math.random() * buttonPhrases.length)];
+            drawButton.textContent = randomPhrase;
+        }
+    }
+};
 const updateParticipantCount = () => { participantCountSpan.textContent = participants.length; };
 const updateWinnersList = () => {
     const isSimpleMode = simpleDrawToggle.checked;
@@ -345,15 +401,13 @@ const updateWinnersList = () => {
         winnerNames.className = 'grid grid-cols-2 gap-x-4 gap-y-2 mt-2 text-base';
         prizes[0].winners.forEach(winner => {
             const winnerTag = document.createElement('div');
-            winnerTag.textContent = winner.name; // ★ 修改：讀取物件的 name 屬性
+            winnerTag.textContent = winner.name;
             winnerTag.className = 'winner-tag px-2 py-1 rounded-md truncate cursor-pointer transition-colors';
             
-            // ★ 新增：根據記憶體的狀態，決定是否要加上樣式
             if (winner.claimed) {
                 winnerTag.classList.add('claimed');
             }
             
-            // ★ 修改：點擊時，同時更新記憶體狀態與視覺樣式
             winnerTag.addEventListener('click', (e) => {
                 winner.claimed = !winner.claimed;
                 e.currentTarget.classList.toggle('claimed', winner.claimed);
@@ -371,15 +425,13 @@ const updateWinnersList = () => {
                 winnerNames.className = 'grid grid-cols-2 gap-x-4 gap-y-2 mt-2 text-base';
                 prize.winners.forEach(winner => {
                     const winnerTag = document.createElement('div');
-                    winnerTag.textContent = winner.name; // ★ 修改：讀取物件的 name 屬性
+                    winnerTag.textContent = winner.name;
                     winnerTag.className = 'winner-tag px-2 py-1 rounded-md truncate cursor-pointer transition-colors';
 
-                    // ★ 新增：根據記憶體的狀態，決定是否要加上樣式
                     if (winner.claimed) {
                         winnerTag.classList.add('claimed');
                     }
                     
-                    // ★ 修改：點擊時，同時更新記憶體狀態與視覺樣式
                     winnerTag.addEventListener('click', (e) => {
                         winner.claimed = !winner.claimed;
                         e.currentTarget.classList.toggle('claimed', winner.claimed);
@@ -397,7 +449,6 @@ const exportResultsToCsv = () => {
     let csvContent = isSimpleMode ? '\uFEFF"抽出順序","姓名"\n' : '\uFEFF"獎項","得獎人"\n';
     prizes.forEach(prize => {
         prize.winners.forEach((winner, index) => {
-            // ★ 修改：讀取物件的 name 屬性
             const winnerEscaped = `"${winner.name.replace(/"/g, '""')}"`;
             if (isSimpleMode) {
                 csvContent += `${index + 1},${winnerEscaped}\n`;
@@ -462,3 +513,4 @@ const launchConfetti = () => { const duration = 2 * 1000; const animationEnd = D
 
 // Start the application
 init();
+
