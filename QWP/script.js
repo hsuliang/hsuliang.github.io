@@ -438,13 +438,20 @@ async function generateSingleBatch(questionsInBatch, questionType, difficulty, t
     
     const studentGradeText = studentLevelSelect.options[studentLevelSelect.selectedIndex].text;
 
+    // *** MODIFICATION STARTS HERE: Enhanced Prompt based on professional document ***
     const buildPrompt = (coreTask) => {
-        const baseIntro = `你是一位協助國中小老師出題的專家。請為「${studentGradeText}」程度的學生，根據使用者提供的文本和圖片，`;
+        const baseIntro = `你是一位精通「素養導向評量」的教育專家。你的任務是為「${studentGradeText}」程度的學生，根據使用者提供的文本和圖片來設計評量題目。`;
         const baseFormatRequirement = "你必須嚴格遵守JSON格式。";
-        let competencyPromptPart = `你的任務是生成「素養導向型」的題目，這代表你需要混合設計出能夠評量學生「情境理解」、「分析應用」與「批判思辨」這三種能力的題目。請避免只考記憶的題目。`;
+
+        let competencyPromptPart = `你的任務是生成「素養導向型」的題目。請務必遵循以下的【素養導向評量核心設計指南】來進行設計：
+        【素養導向評量核心設計指南】
+        1.  **情境真實性與脈絡化**: 題目必須建立在有意義、貼近真實生活或學術探究的情境之上。避免為了考試而設計的虛假情境。
+        2.  **整合運用能力**: 評量重點應放在學生是否能整合知識、技能與態度來解決問題。題目應盡可能跨越單一知識點，著重評量學生的分析、比較、評鑑、創造等更高層次的思維能力。
+        3.  **任務導向**: 將題目設計成一個需要學生完成的「任務」。學生需要運用學科知識和能力來分析情境、處理資訊，而不僅僅是回憶事實。
+        `;
         
         if (questionStyle === 'competency-based') {
-             competencyPromptPart += ` 針對每一題，你還必須提供一個名為 'design_concept' 的欄位，用20-40字的繁體中文簡要說明該題的「設計理念」，解釋它旨在評量何種素養能力（例如：情境理解、分析應用、批判思辨）。`;
+             competencyPromptPart += `\n4.  **設計理念說明**: 針對每一題，你還必須提供一個名為 'design_concept' 的欄位，用20-40字的繁體中文簡要說明該題的「設計理念」，解釋它如何體現上述指南中的原則（例如：此題旨在評量學生在真實情境中分析圖表並解決問題的能力）。`;
         }
 
         const langInstruction = languageChoice === 'english'
@@ -452,11 +459,12 @@ async function generateSingleBatch(questionsInBatch, questionType, difficulty, t
             : '所有生成的內容，包含題目、選項、解析，都必須是繁體中文。';
 
         const finalPrompt = questionStyle === 'competency-based'
-            ? `${baseIntro} ${competencyPromptPart} ${coreTask} ${langInstruction} ${baseFormatRequirement}`
+            ? `${baseIntro} ${competencyPromptPart}\n\n現在，請開始執行你的任務：${coreTask} ${langInstruction} ${baseFormatRequirement}`
             : `${baseIntro} ${coreTask} ${langInstruction} ${baseFormatRequirement}`;
         
         return finalPrompt;
     };
+    // *** MODIFICATION ENDS HERE ***
     
     let jsonSchema;
     const mcProperties = { text: { type: "STRING" }, options: { type: "ARRAY", items: { type: "STRING" } }, correct: { type: "ARRAY", items: { type: "INTEGER" } }, time: { type: "INTEGER", "default": 30 } };
@@ -842,13 +850,20 @@ function applyThemePreference() {
 function populateVersionHistory() {
     if (!versionHistoryContent) return;
     
-    const currentDisplayVersion = 'v7.6 智慧說明';
+    const currentDisplayVersion = 'v7.7 專家升級';
     if (versionBtn) versionBtn.textContent = currentDisplayVersion;
     
     const versionHistory = [
          {
-            version: "v7.6 智慧說明",
+            version: "v7.7 專家升級",
             current: true,
+            notes: [
+                "【✨ AI 核心升級】",
+                " - 植入專業的「素養導向評量核心設計指南」作為 AI 出題時的最高指導原則，大幅提升素養導向題目的深度與品質。"
+            ]
+        },
+        {
+            version: "v7.6 智慧說明",
             notes: [
                 "【✨ 功能升級】",
                 " - 新增智慧邏輯：當匯出格式切換至需要「答題說明」的 Wayground 或 LoiLoNote 時，若現有題目無說明，將自動觸發 AI 重新生成以補齊內容。"
@@ -859,14 +874,6 @@ function populateVersionHistory() {
             notes: [
                 "【✨ UI/UX 優化】",
                 " - 新增「常用設定」區塊的收合功能，並能記憶狀態，節省畫面空間。",
-            ]
-        },
-        {
-            version: "v7.4 全域設定",
-            notes: [
-                "【✨ 功能升級】",
-                " - 將「學生程度」提升為全域設定，移至「常用設定」的第二個頁籤中。",
-                " - 現在此設定會同時影響「AI生成內容」的文章難易度和「生成題目」的題目深淺。",
             ]
         },
     ];
@@ -948,7 +955,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     addSafeEventListener(textInput, 'input', updateRegenerateButtonState, 'textInput for button state');
 
-    // *** NEW: Event listener for format select ***
     addSafeEventListener(formatSelect, 'change', () => {
         const newFormat = formatSelect.value;
         const needsExplanation = newFormat === 'loilonote' || newFormat === 'wayground';
