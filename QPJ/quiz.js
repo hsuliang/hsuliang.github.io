@@ -29,14 +29,19 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (!data) throw new Error('找不到測驗資料');
 
-            // 1. Base64 Decode
-            const base64Decoded = atob(data);
-            
-            // 2. Convert to Uint8Array
-            const uint8Array = new Uint8Array(base64Decoded.split('').map(char => char.charCodeAt(0)));
-            
+            // *** FIX STARTS HERE ***
+            // 1. Base64 Decode the binary string
+            const binaryString = atob(data);
+
+            // 2. Convert binary string to Uint8Array
+            const uint8Array = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                uint8Array[i] = binaryString.charCodeAt(i);
+            }
+
             // 3. Decompress with Pako
             const decompressed = pako.inflate(uint8Array, { to: 'string' });
+            // *** FIX ENDS HERE ***
             
             // 4. Parse JSON
             const parsedQuestions = JSON.parse(decompressed);
@@ -100,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const isTF = question.hasOwnProperty('is_correct');
         const correctIndex = isTF ? (question.is_correct ? 0 : 1) : question.correct[0];
 
-        // Disable all buttons after selection
         document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
         
         if (selectedIndex === correctIndex) {
@@ -108,7 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
             event.target.classList.add('correct');
         } else {
             event.target.classList.add('incorrect');
-            // Highlight the correct answer
             const correctButton = optionsContainer.querySelector(`[data-index='${correctIndex}']`);
             if (correctButton) {
                 correctButton.classList.add('correct');
@@ -118,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             currentQuestionIndex++;
             showQuestion();
-        }, 1200); // Wait for 1.2 seconds before showing the next question
+        }, 1200);
     }
 
     function endQuiz() {
