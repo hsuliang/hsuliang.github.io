@@ -6,7 +6,6 @@ const formatSelect = document.getElementById('format-select');
 
 /**
  * 從 sessionStorage 獲取並驗證 API Key
- * @returns {string|null} API Key 或 null
  */
 export function getApiKey() {
     const keyDataString = sessionStorage.getItem('gemini_api_key_data');
@@ -34,7 +33,6 @@ export async function generateSingleBatch(questionsInBatch, questionType, diffic
     const apiKey = getApiKey();
     if (!apiKey) throw new Error("API Key not available.");
 
-    // 在這個版本，API Key 是直接拼接到 URL 後面
     const apiUrl = `${CONFIG.API_URL}${apiKey}`;
     const selectedFormat = formatSelect ? formatSelect.value : '';
     const needsExplanation = selectedFormat === 'loilonote' || selectedFormat === 'wayground';
@@ -111,7 +109,6 @@ export async function generateSingleBatch(questionsInBatch, questionType, diffic
         }
     };
 
-    // 在這個版本，使用的是標準 fetch，且沒有 Authorization 標頭
     const response = await fetch(apiUrl, { 
         method: 'POST', 
         headers: { 
