@@ -5,8 +5,35 @@ const studentLevelSelect = document.getElementById('student-level-select');
 const formatSelect = document.getElementById('format-select');
 
 /**
+ * 新增：帶有重試機制的 Fetch 函式
+ * @param {string} url - 請求的 URL
+ * @param {object} options - Fetch 的設定選項
+ * @param {number} retries - 最大重試次數
+ * @param {number} delay - 初始延遲時間 (毫秒)
+ * @returns {Promise<Response>}
+ */
+async function fetchWithRetry(url, options, retries = 3, delay = 2000) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(url, options);
+            if (response.status === 503 && i < retries - 1) {
+                console.warn(`Attempt ${i + 1} failed with 503. Retrying in ${delay / 1000}s...`);
+                await new Promise(res => setTimeout(res, delay));
+                delay *= 2; // 指數退避策略
+                continue;
+            }
+            return response;
+        } catch (error) {
+            if (i === retries - 1) throw error;
+            console.warn(`Attempt ${i + 1} failed with network error. Retrying in ${delay / 1000}s...`);
+            await new Promise(res => setTimeout(res, delay));
+            delay *= 2;
+        }
+    }
+}
+
+/**
  * 從 sessionStorage 獲取並驗證 API Key
- * @returns {string|null} API Key 或 null
  */
 export function getApiKey() {
     const keyDataString = sessionStorage.getItem('gemini_api_key_data');
@@ -40,6 +67,7 @@ export async function generateSingleBatch(questionsInBatch, questionType, diffic
 
     const studentGradeText = studentLevelSelect.options[studentLevelSelect.selectedIndex].text;
 
+    // ... (buildPrompt 和 jsonSchema 邏輯保持不變)
     const buildPrompt = (coreTask) => {
         const baseIntro = `你是一位精通「素養導向評量」的教育專家。你的任務是為「${studentGradeText}」程度的學生，根據使用者提供的文本和圖片來設計評量題目。`;
         const baseFormatRequirement = "你必須嚴格遵守JSON格式，絕不輸出JSON以外的任何文字。";
@@ -96,6 +124,7 @@ export async function generateSingleBatch(questionsInBatch, questionType, diffic
             break;
     }
 
+
     const systemPromptText = buildPrompt(coreTask);
     const parts = [{ text: "請根據以下提供的文字和圖片內容出題。" }];
     if(text.trim()){ parts.push({ text: `文字內容:\n${text}`}); }
@@ -110,7 +139,13 @@ export async function generateSingleBatch(questionsInBatch, questionType, diffic
         }
     };
 
-    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal });
+    // 使用帶有重試機制的 fetch 函式
+    const response = await fetchWithRetry(apiUrl, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(payload), 
+        signal 
+    });
 
     if (!response.ok) {
         const errorBody = await response.json().catch(() => ({ error: { message: '無法讀取錯誤內容' } }));
