@@ -1,6 +1,6 @@
 import { CONFIG, contentLoadingMessages, questionLoadingMessages } from './config.js';
 import * as state from './state.js';
-import { getApiKey, generateSingleBatch } from './api.js';
+import { getApiKey, generateSingleBatch, fetchWithRetry } from './api.js'; // 匯入 fetchWithRetry
 import * as ui from './ui.js';
 import { isEnglish, debounce, isAutoGenerateEnabled } from './utils.js';
 
@@ -50,7 +50,7 @@ export async function generateContentFromTopic() {
     try {
         const studentLevel = studentLevelSelect.value;
         const isCompetencyBased = competencyBasedCheckbox.checked;
-        const apiUrl = `${CONFIG.API_URL}${apiKey}`;
+        const apiUrl = CONFIG.API_URL; // API Key 不再是 URL 的一部分
         const wordCountMap = { '1-2': 200, '3-4': 400, '5-6': 600, '7-9': 800, '9-12': 1000 };
         const wordCount = wordCountMap[studentLevel];
         const studentGradeText = studentLevelSelect.options[studentLevelSelect.selectedIndex].text;
@@ -70,7 +70,14 @@ export async function generateContentFromTopic() {
             }
         };
 
-        const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+        const response = await fetchWithRetry(apiUrl, { 
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}` 
+            }, 
+            body: JSON.stringify(requestBody) 
+        });
         
         if (!response.ok) {
              const errorBody = await response.json().catch(() => ({ error: { message: '無法讀取錯誤內容' } }));
@@ -92,7 +99,11 @@ export async function generateContentFromTopic() {
         }
     } catch (error) {
         console.error('生成內文時發生錯誤:', error);
-        ui.showToast(error.message, 'error');
+        let userFriendlyMessage = error.message;
+        if (error.message.includes('503')) {
+            userFriendlyMessage = "伺服器目前忙碌中(503)，已自動重試但仍失敗，請稍後再試。";
+        }
+        ui.showToast(userFriendlyMessage, 'error');
     } finally {
         if (previewLoader) previewLoader.classList.add('hidden'); 
     }
@@ -200,7 +211,6 @@ async function proceedWithGeneration(languageChoice) {
          }
          console.error('生成題目時發生錯誤:', error);
 
-         // --- 優化的錯誤提示邏輯 ---
          let userFriendlyMessage = error.message;
          if (error.message.includes('503')) {
              userFriendlyMessage = "伺服器目前忙碌中(503)，已自動重試但仍失敗，請稍後再試或減少單次題目數量。";
