@@ -1,6 +1,6 @@
 import { CONFIG, contentLoadingMessages, questionLoadingMessages } from './config.js';
 import * as state from './state.js';
-import { getApiKey, generateSingleBatch, fetchWithRetry } from './api.js'; // 匯入 fetchWithRetry
+import { getApiKey, generateSingleBatch } from './api.js';
 import * as ui from './ui.js';
 import { isEnglish, debounce, isAutoGenerateEnabled } from './utils.js';
 
@@ -50,7 +50,7 @@ export async function generateContentFromTopic() {
     try {
         const studentLevel = studentLevelSelect.value;
         const isCompetencyBased = competencyBasedCheckbox.checked;
-        const apiUrl = CONFIG.API_URL; // API Key 不再是 URL 的一部分
+        const apiUrl = `${CONFIG.API_URL}${apiKey}`;
         const wordCountMap = { '1-2': 200, '3-4': 400, '5-6': 600, '7-9': 800, '9-12': 1000 };
         const wordCount = wordCountMap[studentLevel];
         const studentGradeText = studentLevelSelect.options[studentLevelSelect.selectedIndex].text;
@@ -70,11 +70,10 @@ export async function generateContentFromTopic() {
             }
         };
 
-        const response = await fetchWithRetry(apiUrl, { 
+        const response = await fetch(apiUrl, { 
             method: 'POST', 
             headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}` 
+                'Content-Type': 'application/json'
             }, 
             body: JSON.stringify(requestBody) 
         });
@@ -99,11 +98,7 @@ export async function generateContentFromTopic() {
         }
     } catch (error) {
         console.error('生成內文時發生錯誤:', error);
-        let userFriendlyMessage = error.message;
-        if (error.message.includes('503')) {
-            userFriendlyMessage = "伺服器目前忙碌中(503)，已自動重試但仍失敗，請稍後再試。";
-        }
-        ui.showToast(userFriendlyMessage, 'error');
+        ui.showToast(error.message, 'error');
     } finally {
         if (previewLoader) previewLoader.classList.add('hidden'); 
     }
@@ -210,16 +205,7 @@ async function proceedWithGeneration(languageChoice) {
              return; 
          }
          console.error('生成題目時發生錯誤:', error);
-
-         let userFriendlyMessage = error.message;
-         if (error.message.includes('503')) {
-             userFriendlyMessage = "伺服器目前忙碌中(503)，已自動重試但仍失敗，請稍後再試或減少單次題目數量。";
-         } else if (error.message.includes('400')) {
-             userFriendlyMessage = "請求內容可能有問題(400)，請檢查您的輸入文字或 API Key。";
-         } else if (error.message.includes('Failed to fetch')) {
-             userFriendlyMessage = "網路連線失敗，請檢查您的網路設定。";
-         }
-         ui.showToast(userFriendlyMessage, 'error');
+         ui.showToast(error.message, 'error');
          
          if (questionsContainer) questionsContainer.innerHTML = '';
          if (previewPlaceholder) previewPlaceholder.classList.remove('hidden');
