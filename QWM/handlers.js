@@ -199,7 +199,18 @@ async function proceedWithGeneration(languageChoice) {
              return; 
          }
          console.error('生成題目時發生錯誤:', error);
-         ui.showToast(error.message, 'error');
+
+         // --- 優化的錯誤提示邏輯 ---
+         let userFriendlyMessage = error.message;
+         if (error.message.includes('503')) {
+             userFriendlyMessage = "伺服器目前忙碌中(503)，已自動重試但仍失敗，請稍後再試或減少單次題目數量。";
+         } else if (error.message.includes('400')) {
+             userFriendlyMessage = "請求內容可能有問題(400)，請檢查您的輸入文字或 API Key。";
+         } else if (error.message.includes('Failed to fetch')) {
+             userFriendlyMessage = "網路連線失敗，請檢查您的網路設定。";
+         }
+         ui.showToast(userFriendlyMessage, 'error');
+         
          if (questionsContainer) questionsContainer.innerHTML = '';
          if (previewPlaceholder) previewPlaceholder.classList.remove('hidden');
     } finally {
