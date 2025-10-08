@@ -5,30 +5,8 @@ const studentLevelSelect = document.getElementById('student-level-select');
 const formatSelect = document.getElementById('format-select');
 
 /**
- * 帶有重試機制的 Fetch 函式
- */
-export async function fetchWithRetry(url, options, retries = 3, delay = 2000) {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const response = await fetch(url, options);
-            if (response.status === 503 && i < retries - 1) {
-                console.warn(`Attempt ${i + 1} failed with 503. Retrying in ${delay / 1000}s...`);
-                await new Promise(res => setTimeout(res, delay));
-                delay *= 2;
-                continue;
-            }
-            return response;
-        } catch (error) {
-            if (i === retries - 1) throw error;
-            console.warn(`Attempt ${i + 1} failed with network error. Retrying in ${delay / 1000}s...`);
-            await new Promise(res => setTimeout(res, delay));
-            delay *= 2;
-        }
-    }
-}
-
-/**
  * 從 sessionStorage 獲取並驗證 API Key
+ * @returns {string|null} API Key 或 null
  */
 export function getApiKey() {
     const keyDataString = sessionStorage.getItem('gemini_api_key_data');
@@ -56,40 +34,45 @@ export async function generateSingleBatch(questionsInBatch, questionType, diffic
     const apiKey = getApiKey();
     if (!apiKey) throw new Error("API Key not available.");
 
-    const apiUrl = CONFIG.API_URL; // MODIFIED: API Key 不再是 URL 的一部分
+    // 在這個版本，API Key 是直接拼接到 URL 後面
+    const apiUrl = `${CONFIG.API_URL}${apiKey}`;
     const selectedFormat = formatSelect ? formatSelect.value : '';
     const needsExplanation = selectedFormat === 'loilonote' || selectedFormat === 'wayground';
 
     const studentGradeText = studentLevelSelect.options[studentLevelSelect.selectedIndex].text;
 
     const buildPrompt = (coreTask) => {
-        // ... (此處內部邏輯不變)
         const baseIntro = `你是一位精通「素養導向評量」的教育專家。你的任務是為「${studentGradeText}」程度的學生，根據使用者提供的文本和圖片來設計評量題目。`;
         const baseFormatRequirement = "你必須嚴格遵守JSON格式，絕不輸出JSON以外的任何文字。";
+
         let competencyPromptPart = `你的任務是生成「素養導向型」的題目。請務必遵循以下的【素養導向評量核心設計指南】來進行設計：
         【素養導向評量核心設計指南】
         1.  **情境真實性與脈絡化**: 題目必須建立在有意義、貼近真實生活或學術探究的情境之上。避免為了考試而設計的虛假情境。
         2.  **整合運用能力**: 評量重點應放在學生是否能整合知識、技能與態度來解決問題。題目應盡可能跨越單一知識點，著重評量學生的分析、比較、評鑑、創造等更高層次的思維能力。
         3.  **任務導向**: 將題目設計成一個需要學生完成的「任務」。學生需要運用學科知識和能力來分析情境、處理資訊，而不僅僅是回憶事實。
         `;
+
         if (questionStyle === 'competency-based') {
              competencyPromptPart += `\n4.  **設計理念說明**: 針對每一題，你還必須提供一個名為 'design_concept' 的欄位，用20-40字的繁體中文簡要說明該題的「設計理念」，解釋它如何體現上述指南中的原則（例如：此題旨在評量學生在真實情境中分析圖表並解決問題的能力）。`;
         }
+
         const langInstruction = languageChoice === 'english'
             ? 'All generated content, including questions, options, and explanations, must be in English.'
             : '所有生成的內容，包含題目、選項、解析，都必須是繁體中文。';
+
         const finalPrompt = questionStyle === 'competency-based'
             ? `${baseIntro} ${competencyPromptPart}\n\n現在，請開始執行你的任務：${coreTask} ${langInstruction} ${baseFormatRequirement}`
             : `${baseIntro} ${coreTask} ${langInstruction} ${baseFormatRequirement}`;
+
         return finalPrompt;
     };
 
     let jsonSchema;
-    // ... (jsonSchema 和 coreTask 邏輯不變)
     const mcProperties = { text: { type: "string" }, options: { type: "array", items: { type: "string" } }, correct: { type: "array", items: { type: "number" } }, time: { type: "number", "default": 30 } };
     let mcRequired = ["text", "options", "correct"];
     if (needsExplanation) { mcProperties.explanation = { type: "string" }; mcRequired.push("explanation"); }
     if (questionStyle === 'competency-based') { mcProperties.design_concept = { type: "string" }; }
+
     let coreTask;
     switch(questionType) {
         case 'true_false':
@@ -114,7 +97,6 @@ export async function generateSingleBatch(questionsInBatch, questionType, diffic
             break;
     }
 
-
     const systemPromptText = buildPrompt(coreTask);
     const parts = [{ text: "請根據以下提供的文字和圖片內容出題。" }];
     if(text.trim()){ parts.push({ text: `文字內容:\n${text}`}); }
@@ -129,12 +111,11 @@ export async function generateSingleBatch(questionsInBatch, questionType, diffic
         }
     };
 
-    // MODIFIED: 使用 Authorization 標頭
-    const response = await fetchWithRetry(apiUrl, { 
+    // 在這個版本，使用的是標準 fetch，且沒有 Authorization 標頭
+    const response = await fetch(apiUrl, { 
         method: 'POST', 
         headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}` 
+            'Content-Type': 'application/json'
         }, 
         body: JSON.stringify(payload), 
         signal 
