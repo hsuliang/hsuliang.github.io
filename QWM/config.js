@@ -1,7 +1,7 @@
 // --- 組態常數 ---
 export const CONFIG = {
-    API_URL: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=`,
-    API_BATCH_SIZE: 8,
+    API_URL: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=`,
+    API_BATCH_SIZE: 6, // 從 8 調降為 6
     DEBOUNCE_DELAY: 800,
     MAX_FILE_SIZE_BYTES: 10 * 1024 * 1024, // 10MB
     MAX_IMAGE_SIZE_BYTES: 4 * 1024 * 1024, // 4MB
