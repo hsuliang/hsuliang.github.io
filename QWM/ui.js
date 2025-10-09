@@ -138,7 +138,6 @@ export function initializeSortable() {
             questions.splice(evt.newIndex, 0, movedItem);
             state.setGeneratedQuestions(questions);
             renderQuestionsForEditing(questions); // 重新渲染以更新索引
-            // 重新初始化拖曳功能會在 renderQuestionsForEditing 結束後再次被呼叫
         }, 
     });
     state.setSortableInstance(newSortable);
@@ -147,7 +146,6 @@ export function initializeSortable() {
 
 /**
  * 將生成的題目渲染到預覽區以供編輯 (安全重構版)
- * @param {Array} questions - 題目陣列
  */
 export function renderQuestionsForEditing(questions) {
     if (!questionsContainer) return;
@@ -312,7 +310,7 @@ export function renderQuestionsForEditing(questions) {
 
     questionsContainer.appendChild(fragment);
     
-    // 重新初始化拖曳功能，因為所有卡片都已重新渲染
+    // 重新初始化拖曳功能
     initializeSortable();
 }
 
@@ -363,26 +361,31 @@ export function applyThemePreference() {
 export function populateVersionHistory() {
     if (!versionHistoryContent) return;
 
-    const currentDisplayVersion = 'v7.8 安全更新'; // 假設我們將版本更新至 v8.0
-    if (versionBtn) versionBtn.textContent = 'v8.0 穩固升級';
+    const currentDisplayVersion = 'v8.0 穩固升級';
+    if (versionBtn) versionBtn.textContent = currentDisplayVersion;
 
     const versionHistory = [
-        // 可以在這裡加入 v8.0 的更新日誌
+         {
+            version: "v8.0 穩固升級",
+            current: true,
+            notes: [
+                "【✨ 安全性強化】",
+                " - 實作 SRI (子資源完整性)，防止 CDN 資源被竄改。",
+                " - 重構題目渲染邏輯，使用標準 DOM 操作防範 XSS 攻擊。",
+                " - 為部分輸入框增加 `required`, `maxlength` 等驗證屬性。",
+                "【🚀 效能與體驗優化】",
+                " - 將大型 JavaScript 函式庫延遲載入，加速頁面初始渲染速度。",
+                " - 為動態提示訊息增加無障礙 (A11y) 屬性。"
+            ]
+        },
         {
             version: "v7.8 安全更新",
             notes: [
                 "【✨ 安全性升級】",
-                " - API 金鑰儲存方式從 localStorage 改為 sessionStorage，關閉分頁後自動清除。",
-                " - 新增 API 金鑰 2 小時有效期限，到期後需重新輸入。",
-                " - 新增 API 金鑰有效時間倒數計時器。",
-                " - 新增 API 金鑰設定區塊的安全提示文字。",
-            ]
-        },
-        {
-            version: "v7.7 專家升級",
-            notes: [
-                "【✨ AI 核心升級】",
-                " - 植入專業的「素養導向評量核心設計指南」作為 AI 出題時的最高指導原則，大幅提升素養導向題目的深度與品質。"
+                " - API 金鑰儲存方式從 localStorage 改為 sessionStorage。",
+                " - 新增 API 金鑰 2 小時有效期限與倒數計時器。",
+                "【🔧 核心修正】",
+                " - 將 API 模型更新以解決 404 錯誤。"
             ]
         },
     ];
