@@ -361,7 +361,7 @@ export function applyThemePreference() {
 export function populateVersionHistory() {
     if (!versionHistoryContent) return;
 
-    const currentDisplayVersion = 'v8.0 穩固升級';
+    const currentDisplayVersion = 'v7.8 安全更新';
     if (versionBtn) versionBtn.textContent = currentDisplayVersion;
 
     const versionHistory = [
@@ -373,6 +373,7 @@ export function populateVersionHistory() {
                 " - 新增 API 金鑰 2 小時有效期限與倒數計時器。",
                 "【🔧 核心修正】",
                 " - 將 API 模型更新以解決 404 錯誤。"
+                " - 解決503 錯誤。"
             ]
         },
         {
