@@ -375,6 +375,27 @@ export function populateVersionHistory() {
                 " - 將 API 模型更新以解決 404 錯誤。"
             ]
         },
+        {
+            version: "v7.7 專家升級",
+            notes: [
+                "【✨ AI 核心升級】",
+                " - 植入專業的「素養導向評量核心設計指南」作為 AI 出題時的最高指導原則，大幅提升素養導向題目的深度與品質。"
+            ]
+        },
+        {
+            version: "v7.6 智慧說明",
+            notes: [
+                "【✨ 功能升級】",
+                " - 新增智慧邏輯：當匯出格式切換至需要「答題說明」的 Wayground 或 LoiLoNote 時，若現有題目無說明，將自動觸發 AI 重新生成以補齊內容。"
+            ]
+        },
+        {
+            version: "v7.5 介面優化",
+            notes: [
+                "【✨ UI/UX 優化】",
+                " - 新增「常用設定」區塊的收合功能，並能記憶狀態，節省畫面空間。",
+            ]
+        },
     ];
     let html = '';
     versionHistory.forEach(v => {
