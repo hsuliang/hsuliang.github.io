@@ -283,6 +283,8 @@ export function populateVersionHistory() {
                 " - 新增 API 金鑰 2 小時有效期限，到期後需重新輸入。",
                 " - 新增 API 金鑰有效時間倒數計時器。",
                 " - 新增 API 金鑰設定區塊的安全提示文字。",
+                "【🔧 核心修正】",
+                " - 將 API 模型更新至 gemini-1.5-flash-latest 以解決 404 錯誤。"
             ]
         },
         {
