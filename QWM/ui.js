@@ -365,19 +365,6 @@ export function populateVersionHistory() {
     if (versionBtn) versionBtn.textContent = currentDisplayVersion;
 
     const versionHistory = [
-         {
-            version: "v8.0 穩固升級",
-            current: true,
-            notes: [
-                "【✨ 安全性強化】",
-                " - 實作 SRI (子資源完整性)，防止 CDN 資源被竄改。",
-                " - 重構題目渲染邏輯，使用標準 DOM 操作防範 XSS 攻擊。",
-                " - 為部分輸入框增加 `required`, `maxlength` 等驗證屬性。",
-                "【🚀 效能與體驗優化】",
-                " - 將大型 JavaScript 函式庫延遲載入，加速頁面初始渲染速度。",
-                " - 為動態提示訊息增加無障礙 (A11y) 屬性。"
-            ]
-        },
         {
             version: "v7.8 安全更新",
             notes: [
