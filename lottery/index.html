@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ㄚ亮笑長的摸彩助手</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-    <link rel="stylesheet" href="style.css">
-</head>
+<header class="text-center my-8">
+    <div class="relative flex flex-col md:flex-row items-center justify-center gap-6">
+        
+        <img src="../Aliang.png" alt="Aliang Logo" class="h-16 md:h-24 w-auto object-contain">
+        
+        <h1 id="main-title" class="text-5xl md:text-7xl font-bold izakaya-title leading-tight">
+            ㄚ亮笑長的摸彩助手
+        </h1>
+
+        <button id="reset-btn" class="absolute right-0 text-3xl p-2 rounded-full hidden hover:bg-white/10 transition-colors" style="color: var(--text-muted-color);" title="重置並返回設定">⟲</button>
+    </div>
+</header>
 <body class="p-4 pb-16">
 
     <div class="w-full max-w-5xl mx-auto">
