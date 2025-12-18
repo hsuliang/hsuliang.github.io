@@ -1,6 +1,6 @@
 <html><head><base href="." />
 <meta charset="UTF-8">
-<title>Padlet分組Qrcode產生器</title>
+<title>ㄚ亮笑長的Qrcode助手</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
     body {
@@ -12,12 +12,19 @@
         min-height: 100vh;
     }
     .header {
-        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         margin-bottom: 30px;
         padding: 20px;
         background: white;
         border-radius: 15px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        gap: 20px;
+    }
+    .header img {
+        height: 60px; /* 調整 Logo 高度 */
+        width: auto;
     }
     .header h1 {
         color: #2c3e50;
@@ -157,7 +164,8 @@
 </head>
 <body>
     <div class="header">
-        <h1>Padlet分組Qrcode產生器</h1>
+        <img src="Alianglogo.jpg" alt="Logo">
+        <h1>ㄚ亮笑長的Qrcode助手</h1>
     </div>
     
     <div id="input-container">
