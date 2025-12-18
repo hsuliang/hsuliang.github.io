@@ -1,0 +1,333 @@
+<html><head><base href="." />
+<meta charset="UTF-8">
+<title>ㄚ亮笑長的Qrcode助手</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+        min-height: 100vh;
+    }
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        /* 修改處：將原本的 20px 間距縮小 50% */
+        gap: 10px; 
+    }
+    .header img {
+        height: 60px;
+        width: auto;
+    }
+    .header h1 {
+        color: #2c3e50;
+        margin: 0;
+        /* 修改處：將字體大小增加 25% (2.2em * 1.25 = 2.75em) */
+        font-size: 2.75em;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+    .input-group {
+        margin-bottom: 20px;
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        position: relative;
+    }
+    .input-group:hover {
+        transform: translateY(-2px);
+    }
+    .input-fields {
+        display: flex;
+        gap: 10px;
+        flex: 1;
+    }
+    .title-input {
+        width: 30%;
+    }
+    .url-input {
+        width: 70%;
+    }
+    input {
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+    }
+    input:focus {
+        outline: none;
+        border-color: #3498db;
+    }
+    button {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        padding: 12px 25px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    .delete-btn {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        padding: 8px 12px;
+        margin: 0;
+    }
+    .qr-table {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 25px;
+        margin-top: 30px;
+        justify-items: center;
+    }
+    .qr-item {
+        text-align: center;
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+        width: 200px;
+    }
+    .qr-item:hover {
+        transform: translateY(-3px);
+    }
+    .qr-item h3 {
+        margin: 0 0 15px 0;
+        font-size: 18px;
+        color: #2c3e50;
+        word-wrap: break-word;
+    }
+    .qr-item img {
+        margin: 0 auto;
+        display: block;
+    }
+    .footer {
+        text-align: center;
+        margin-top: 40px;
+        padding: 20px;
+        color: #34495e;
+        font-size: 16px;
+    }
+    .footer a {
+        color: #3498db;
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+    .footer a:hover {
+        color: #2980b9;
+    }
+    #reset-button {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    }
+    .button-container {
+        text-align: center;
+        margin: 20px 0;
+    }
+    .error {
+        color: #e74c3c;
+        font-size: 14px;
+        margin-top: 5px;
+        display: none;
+        position: absolute;
+        bottom: -20px;
+        left: 20px;
+    }
+    .url-error {
+        color: #e74c3c;
+        font-size: 14px;
+        margin-top: 5px;
+        display: none;
+        position: absolute;
+        bottom: -20px;
+        left: 20px;
+    }
+</style>
+</head>
+<body>
+    <div class="header">
+        <img src="Aliang.png" alt="Logo">
+        <h1>ㄚ亮笑長的Qrcode助手</h1>
+    </div>
+    
+    <div id="input-container">
+        <div class="input-group">
+            <div class="input-fields">
+                <input type="text" placeholder="請輸入標題" class="title-input" value="第 1 組">
+                <input type="text" placeholder="請貼上網址" class="url-input">
+            </div>
+            <div class="error">請填寫標題和網址</div>
+            <div class="url-error">請輸入正確的網址格式</div>
+        </div>
+    </div>
+
+    <div class="button-container" id="initial-buttons">
+        <button onclick="addNewInput()">新增欄位</button>
+        <button onclick="generateQRCodes()">送出</button>
+    </div>
+
+    <div id="qr-container" class="qr-table"></div>
+
+    <div class="button-container" id="reset-container" style="display: none;">
+        <button id="reset-button" onclick="resetPage()">重置</button>
+    </div>
+
+    <div class="footer">
+        Made by <a href="https://lin.ee/Z2KRZior" target="_blank">ㄚ亮笑長練功坊</a>
+    </div>
+
+<script>
+let groupCounter = 1;
+
+function isValidUrl(url) {
+    try {
+        new URL(url);
+        return true;
+    } catch (err) {
+        return false;
+    }
+}
+
+function addNewInput() {
+    groupCounter++;
+    const container = document.getElementById('input-container');
+    const newGroup = document.createElement('div');
+    newGroup.className = 'input-group';
+    newGroup.innerHTML = `
+        <div class="input-fields">
+            <input type="text" placeholder="請輸入標題" class="title-input" value="第 ${groupCounter} 組">
+            <input type="text" placeholder="請貼上網址" class="url-input">
+        </div>
+        <button class="delete-btn" onclick="deleteInputGroup(this)">刪除</button>
+        <div class="error">請填寫標題和網址</div>
+        <div class="url-error">請輸入正確的網址格式</div>
+    `;
+    container.appendChild(newGroup);
+}
+
+function deleteInputGroup(btn) {
+    const inputGroup = btn.parentElement;
+    inputGroup.remove();
+    updateGroupNumbers();
+}
+
+function updateGroupNumbers() {
+    const titleInputs = document.getElementsByClassName('title-input');
+    for(let i = 0; i < titleInputs.length; i++) {
+        titleInputs[i].value = `第 ${i + 1} 組`;
+    }
+    groupCounter = titleInputs.length;
+}
+
+function generateQRCodes() {
+    const titleInputs = document.getElementsByClassName('title-input');
+    const urlInputs = document.getElementsByClassName('url-input');
+    const errorDivs = document.getElementsByClassName('error');
+    const urlErrorDivs = document.getElementsByClassName('url-error');
+    let hasError = false;
+    
+    for(let i = 0; i < errorDivs.length; i++) {
+        errorDivs[i].style.display = 'none';
+        urlErrorDivs[i].style.display = 'none';
+    }
+    
+    for(let i = 0; i < titleInputs.length; i++) {
+        const title = titleInputs[i].value.trim();
+        const url = urlInputs[i].value.trim();
+        
+        if(!title || !url) {
+            errorDivs[i].style.display = 'block';
+            hasError = true;
+        } else if (!isValidUrl(url)) {
+            urlErrorDivs[i].style.display = 'block';
+            hasError = true;
+        }
+    }
+    
+    if(hasError) {
+        return;
+    }
+    
+    const container = document.getElementById('input-container');
+    const qrContainer = document.getElementById('qr-container');
+    const initialButtons = document.getElementById('initial-buttons');
+    const resetContainer = document.getElementById('reset-container');
+    
+    container.style.display = 'none';
+    initialButtons.style.display = 'none';
+    resetContainer.style.display = 'block';
+    qrContainer.innerHTML = '';
+    
+    for(let i = 0; i < titleInputs.length; i++) {
+        const title = titleInputs[i].value.trim();
+        const url = urlInputs[i].value.trim();
+        
+        const qrItem = document.createElement('div');
+        qrItem.className = 'qr-item';
+        
+        const titleElement = document.createElement('h3');
+        titleElement.textContent = title;
+        qrItem.appendChild(titleElement);
+        
+        const qrElement = document.createElement('div');
+        qrElement.style.display = 'flex';
+        qrElement.style.justifyContent = 'center';
+        qrItem.appendChild(qrElement);
+        
+        qrContainer.appendChild(qrItem);
+        
+        new QRCode(qrElement, {
+            text: url,
+            width: 128,
+            height: 128
+        });
+    }
+}
+
+function resetPage() {
+    groupCounter = 1;
+    const container = document.getElementById('input-container');
+    const qrContainer = document.getElementById('qr-container');
+    const initialButtons = document.getElementById('initial-buttons');
+    const resetContainer = document.getElementById('reset-container');
+    
+    qrContainer.innerHTML = '';
+    
+    container.innerHTML = `
+        <div class="input-group">
+            <div class="input-fields">
+                <input type="text" placeholder="請輸入標題" class="title-input" value="第 1 組">
+                <input type="text" placeholder="請貼上網址" class="url-input">
+            </div>
+            <div class="error">請填寫標題和網址</div>
+            <div class="url-error">請輸入正確的網址格式</div>
+        </div>
+    `;
+    
+    container.style.display = 'block';
+    initialButtons.style.display = 'block';
+    resetContainer.style.display = 'none';
+}
+</script>
+</body>
+</html>
